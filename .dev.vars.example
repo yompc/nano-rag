@@ -1,0 +1,17 @@
+# Mistral API Key for Embedding and LLM
+# Get your key at: https://console.mistral.ai/api-keys/
+MISTRAL_API_KEY=your-mistral-api-key-here
+
+# ============== 模型配置（可选，有默认值） ==============
+# 聊天模型（用于问答、关键词提取、查询改写、幻觉检测等）
+# CHAT_MODEL=mistral-small-latest
+# CHAT_ENDPOINT=https://api.mistral.ai/v1/chat/completions
+# CHAT_TEMPERATURE=0.3
+# CHAT_TIMEOUT=30000
+
+# Embedding 模型
+# EMBEDDING_MODEL=mistral-embed
+# EMBEDDING_ENDPOINT=https://api.mistral.ai/v1/embeddings
+# EMBEDDING_DIMENSIONS=1024
+# EMBEDDING_TIMEOUT=10000
+# EMBEDDING_MAX_RETRIES=3

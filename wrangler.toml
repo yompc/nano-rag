@@ -1,0 +1,28 @@
+name = "nano-rag"
+main = ".open-next/worker.js"
+compatibility_date = "2025-05-05"
+compatibility_flags = ["nodejs_compat"]
+
+[build]
+command = "npm run build"
+
+# 静态资源配置
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# D1 数据库绑定
+[[d1_databases]]
+binding = "DB"
+database_name = "nano-rag-db"
+database_id = "local"  # 本地开发用 "local"，生产环境需要真实 ID
+
+[vars]
+ENVIRONMENT = "development"
+
+[env.production]
+name = "nano-rag-production"
+# 生产环境需要真实的 database_id
+
+[env.staging]
+name = "nano-rag-staging"
