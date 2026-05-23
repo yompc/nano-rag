@@ -7,7 +7,6 @@ import { retrieveNode } from './nodes/retrieve';
 import { generateNode, generateStreamNode } from './nodes/generate';
 import { hallucinationCheckNode } from './nodes/hallucination-check';
 import { qualityCheckNode } from './nodes/quality-check';
-import { relevanceCheckNode } from './nodes/relevance-check';
 import type { StreamController, SourceWithSimilarity } from '@/lib/streaming/types';
 
 const MAX_RETRIES = 2;
@@ -135,8 +134,7 @@ export async function runRAG(input: RunRAGInput): Promise<RunRAGResult> {
     messages,
     selected_doc_ids: undefined,
     quality_issues: null,
-    fixed_answer: null,
-    is_relevant: null
+    fixed_answer: null
   } as RAGState);
 
   return {
@@ -175,40 +173,22 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
     messages,
     selected_doc_ids: undefined,
     quality_issues: null,
-    fixed_answer: null,
-    is_relevant: null
+    fixed_answer: null
   };
 
   let finalAnswer: string | null = null;
   let finalSources: SourceWithSimilarity[] = [];
 
   try {
-    // 0. Relevance Check - 判断问题是否适合文档检索
-    controller.sendStatus('relevance_check', '正在分析问题...');
-    const relevanceStart = Date.now();
-    const relevanceResult = await relevanceCheckNode({ state, apiKey });
-    state = { ...state, ...relevanceResult };
-    controller.sendStatus('relevance_check', '问题分析完成', { duration: Date.now() - relevanceStart });
-
-    // 如果问题不适合文档检索，直接返回友好提示
-    if (state.is_relevant === false) {
-      const friendlyMessage = '这个问题似乎与文档库中的内容无关。请尝试询问文档中的内容、数据或规定。';
-      controller.sendChunk(friendlyMessage);
-      controller.sendDone(sessionId);
-      return {
-        answer: friendlyMessage,
-        sources: [],
-        hallucination: null,
-        retryCount: 0
-      };
-    }
-
     // 1. Rewrite Query Node
     controller.sendStatus('rewrite', '正在优化查询...');
     const rewriteStart = Date.now();
     const rewriteResult = await rewriteQueryNode(state, apiKey);
     state = { ...state, ...rewriteResult };
     controller.sendStatus('rewrite', '查询优化完成', { duration: Date.now() - rewriteStart });
+    controller.sendThinking('rewrite', `查询改写: "${state.rewritten_question || question}"`, {
+      query: state.rewritten_question || question
+    });
 
     // 2. Document Selector Node
     controller.sendStatus('document_selector', '正在选择相关文档...');
@@ -222,6 +202,10 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
     controller.sendStatus('document_selector', '文档选择完成', {
       duration: docSelectorDuration,
       selectedCount: state.selected_doc_ids?.length ?? 0
+    });
+    const selectedDocs = state.selected_doc_ids?.length || 0;
+    controller.sendThinking('document_selection', `从文档库中选择了 ${selectedDocs} 个相关文档`, {
+      documents: state.selected_doc_ids?.map(id => id.toString()) || []
     });
 
     // 3. Retrieve Node
@@ -242,6 +226,12 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
         preview: chunk.content.slice(0, 100)
       }));
       controller.sendSources(finalSources);
+    }
+    if (state.top_chunks.length > 0) {
+      controller.sendThinking('retrieval', `检索到 ${state.top_chunks.length} 个相关文档片段`, {
+        documents: state.top_chunks.map(c => c.filename),
+        confidence: state.top_chunks[0]?.similarity
+      });
     }
     controller.sendStatus('retrieve', '文档检索完成', { duration: retrieveDuration });
 
@@ -264,6 +254,9 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
       });
       state = { ...state, ...generateResult };
       controller.sendStatus('generate', '回答生成完成', { duration: Date.now() - generateStart, retryCount: retryIteration });
+      controller.sendThinking('generation', `基于检索到的 ${finalSources.length} 个文档片段生成回答`, {
+        documents: finalSources.map(s => s.filename)
+      });
 
       // Hallucination Check Node
       controller.sendStatus('check', '正在验证回答准确性...');
@@ -271,6 +264,8 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
       const checkResult = await hallucinationCheckNode({ state, apiKey });
       state = { ...state, ...checkResult };
       controller.sendStatus('check', '验证完成', { duration: Date.now() - checkStart });
+      const checkResultText = state.hallucination === false ? '通过' : '未通过';
+      controller.sendThinking('validation', `回答验证${checkResultText}${state.retry_count > 0 ? ` (第 ${state.retry_count} 次重试)` : ''}`);
 
       // Check if we need to retry
       if (state.hallucination === false) {

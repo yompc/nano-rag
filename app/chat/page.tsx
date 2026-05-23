@@ -22,7 +22,13 @@ export default function ChatPage() {
       messagesLengthRef.current = messages.length;
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages.length]);
+
+  useEffect(() => {
+    if (loading && messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, loading]);
 
   const sendStreamingMessage = async () => {
     if (!input.trim() || loading) return;
@@ -166,6 +172,48 @@ export default function ChatPage() {
                   // 重试时清除之前的流式内容，但保留消息占位符
                   streamingContent = '';
                   // 不删除消息，让新的 chunk 事件更新内容
+                  break;
+                }
+
+                case 'thinking': {
+                  const { step, content, metadata } = data;
+                  const stepNames: Record<string, string> = {
+                    'rewrite': '查询改写',
+                    'document_selection': '文档选择',
+                    'retrieval': '文档检索',
+                    'generation': '回答生成',
+                    'validation': '回答验证'
+                  };
+                  setThinkingSteps((prev) => {
+                    const existingIndex = prev.findIndex(s => s.id === step);
+                    if (existingIndex >= 0) {
+                      const newSteps = [...prev];
+                      newSteps[existingIndex] = {
+                        ...newSteps[existingIndex],
+                        description: content,
+                        metadata: {
+                          ...newSteps[existingIndex].metadata,
+                          originalQuery: metadata?.query,
+                          rewrittenQuery: metadata?.query,
+                        },
+                        status: 'completed'
+                      };
+                      thinkingStepsRef.current = newSteps;
+                      return newSteps;
+                    }
+                    const newSteps = [...prev, {
+                      id: step,
+                      name: stepNames[step] || step,
+                      description: content,
+                      metadata: {
+                        originalQuery: metadata?.query,
+                        rewrittenQuery: metadata?.query,
+                      },
+                      status: 'completed' as const
+                    }];
+                    thinkingStepsRef.current = newSteps;
+                    return newSteps;
+                  });
                   break;
                 }
 

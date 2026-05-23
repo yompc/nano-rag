@@ -74,7 +74,9 @@ export async function POST(request: NextRequest) {
             sendQualityCheck: (hasIssues: boolean, issues: any[], fixedAnswer?: string) =>
               sendEvent('quality_check', { hasIssues, issues, fixedAnswer }),
             sendRetry: (retryCount: number, reason: string) =>
-              sendEvent('retry', { retryCount, reason })
+              sendEvent('retry', { retryCount, reason }),
+            sendThinking: (step: string, content: string, metadata?: any) =>
+              sendEvent('thinking', { step, content, metadata })
           };
           
           const result = await runRAGStream({

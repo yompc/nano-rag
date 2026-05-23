@@ -61,7 +61,18 @@ export interface RetryEvent extends BaseEvent {
   reason: string;
 }
 
-export type StreamEvent = StatusEvent | ChunkEvent | SourcesEvent | ErrorEvent | DoneEvent | QualityCheckEvent | RetryEvent;
+export interface ThinkingEvent extends BaseEvent {
+  type: 'thinking';
+  step: 'rewrite' | 'document_selection' | 'retrieval' | 'generation' | 'validation';
+  content: string;
+  metadata?: {
+    query?: string;
+    documents?: string[];
+    confidence?: number;
+  };
+}
+
+export type StreamEvent = StatusEvent | ChunkEvent | SourcesEvent | ErrorEvent | DoneEvent | QualityCheckEvent | RetryEvent | ThinkingEvent;
 
 export interface SourceWithSimilarity {
   id: number;
@@ -80,6 +91,7 @@ export interface StreamController {
   sendDone: (sessionId: string) => void;
   sendQualityCheck: (hasIssues: boolean, issues: QualityCheckEvent['issues'], fixedAnswer?: string) => void;
   sendRetry: (retryCount: number, reason: string) => void;
+  sendThinking: (step: ThinkingEvent['step'], content: string, metadata?: ThinkingEvent['metadata']) => void;
 }
 
 export function encodeEvent(eventType: string, event: object): string {

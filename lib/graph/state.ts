@@ -74,11 +74,6 @@ export const RAGStateAnnotation = Annotation.Root({
   fixed_answer: Annotation<string | null>({
     default: () => null,
     value: (left, right) => right ?? left ?? null
-  }),
-
-  is_relevant: Annotation<boolean | null>({
-    default: () => null,
-    value: (left, right) => right ?? left ?? null
   })
 });
 
@@ -96,5 +91,4 @@ export type RAGState = {
   selected_doc_ids: number[] | undefined;
   quality_issues: QualityIssue[] | null;
   fixed_answer: string | null;
-  is_relevant: boolean | null;
 };

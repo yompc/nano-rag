@@ -17,8 +17,8 @@ import { SYSTEM_PROMPT } from '@/lib/prompts';
  */
 function truncateMessages(
   messages: Message[], 
-  maxPerMessage: number = 2000, 
-  maxCount: number = 10
+  maxPerMessage: number = 100000, 
+  maxCount: number = 100
 ): Message[] {
   return messages.slice(-maxCount).map(m => ({
     role: m.role,
