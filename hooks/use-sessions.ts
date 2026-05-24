@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   getSessions,
   getSession,
@@ -25,62 +25,72 @@ interface UseSessionsReturn {
   deleteSessionById: (sessionId: string) => void;
 }
 
-export function useSessions(): UseSessionsReturn {
-  const [sessions, setSessions] = useState<LocalSession[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [currentMessages, setCurrentMessages] = useState<LocalMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+function getInitialState(): {
+  sessions: LocalSession[];
+  currentSessionId: string | null;
+  currentMessages: LocalMessage[];
+} {
+  const savedId = getCurrentSessionId();
+  const allSessions = getSessions();
 
-  // 初始化：从 localStorage 加载
-  useEffect(() => {
-    const savedId = getCurrentSessionId();
-    const allSessions = getSessions();
-    setSessions(allSessions);
-
-    if (savedId) {
-      const session = getSession(savedId);
-      if (session) {
-        setCurrentSessionId(savedId);
-        setCurrentMessages(session.messages);
-      }
+  if (savedId) {
+    const session = getSession(savedId);
+    if (session) {
+      return {
+        sessions: allSessions,
+        currentSessionId: savedId,
+        currentMessages: session.messages,
+      };
     }
-    setIsLoading(false);
-  }, []);
+  }
 
-  // 切换会话 - 返回新会话的消息
+  return {
+    sessions: allSessions,
+    currentSessionId: null,
+    currentMessages: [],
+  };
+}
+
+export function useSessions(): UseSessionsReturn {
+  const [state, setState] = useState(getInitialState);
+
   const switchSession = useCallback((sessionId: string): LocalMessage[] => {
     const session = getSession(sessionId);
     if (session) {
-      setCurrentSessionId(sessionId);
-      setCurrentMessages(session.messages);
       saveCurrentSessionId(sessionId);
+      setState(prev => ({
+        ...prev,
+        currentSessionId: sessionId,
+        currentMessages: session.messages,
+      }));
       return session.messages;
-    } else {
-      // 如果找不到会话，创建新的空会话
-      setCurrentSessionId(null);
-      setCurrentMessages([]);
-      clearCurrentSessionId();
-      return [];
     }
+    clearCurrentSessionId();
+    setState(prev => ({
+      ...prev,
+      currentSessionId: null,
+      currentMessages: [],
+    }));
+    return [];
   }, []);
 
-  // 保存当前会话（消息变化时调用）
   const saveCurrentSession = useCallback((messages: LocalMessage[]) => {
     if (messages.length === 0) return;
 
-    if (!currentSessionId) {
-      // 新会话：创建并保存
+    if (!state.currentSessionId) {
       const newSession = createSession();
       newSession.title = messages[0]?.content.slice(0, 30) || '新对话';
       newSession.messages = messages;
       newSession.updatedAt = Date.now();
       upsertSession(newSession);
-      setCurrentSessionId(newSession.id);
       saveCurrentSessionId(newSession.id);
-      setSessions(getSessions());
+      setState(prev => ({
+        sessions: getSessions(),
+        currentSessionId: newSession.id,
+        currentMessages: prev.currentMessages,
+      }));
     } else {
-      // 更新现有会话
-      const session = getSession(currentSessionId);
+      const session = getSession(state.currentSessionId);
       if (session) {
         session.messages = messages;
         session.updatedAt = Date.now();
@@ -88,34 +98,41 @@ export function useSessions(): UseSessionsReturn {
           session.title = messages[0].content.slice(0, 30);
         }
         upsertSession(session);
-        setSessions(getSessions());
+        setState(prev => ({
+          ...prev,
+          sessions: getSessions(),
+        }));
       }
     }
-  }, [currentSessionId]);
+  }, [state.currentSessionId]);
 
-  // 创建新会话
   const createNewSession = useCallback(() => {
-    setCurrentSessionId(null);
-    setCurrentMessages([]);
     clearCurrentSessionId();
+    setState(prev => ({
+      ...prev,
+      currentSessionId: null,
+      currentMessages: [],
+    }));
   }, []);
 
-  // 删除会话
   const deleteSessionById = useCallback((sessionId: string) => {
     deleteSessionFromStorage(sessionId);
     const remaining = getSessions();
-    setSessions(remaining);
+    setState(prev => ({
+      ...prev,
+      sessions: remaining,
+    }));
 
-    if (currentSessionId === sessionId) {
+    if (state.currentSessionId === sessionId) {
       createNewSession();
     }
-  }, [currentSessionId, createNewSession]);
+  }, [state.currentSessionId, createNewSession]);
 
   return {
-    sessions,
-    currentSessionId,
-    currentMessages,
-    isLoading,
+    sessions: state.sessions,
+    currentSessionId: state.currentSessionId,
+    currentMessages: state.currentMessages,
+    isLoading: false,
     switchSession,
     saveCurrentSession,
     createNewSession,

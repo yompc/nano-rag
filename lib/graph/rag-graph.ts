@@ -1,4 +1,4 @@
-import { StateGraph, END } from '@langchain/langgraph';
+import { StateGraph, END, START } from '@langchain/langgraph';
 import type { D1Database } from '@/lib/types';
 import { RAGStateAnnotation, type RAGState, type Message } from './state';
 import { rewriteQueryNode } from './nodes/rewrite-query';
@@ -10,6 +10,17 @@ import { qualityCheckNode } from './nodes/quality-check';
 import type { StreamController, SourceWithSimilarity } from '@/lib/streaming/types';
 
 const MAX_RETRIES = 2;
+
+type GraphNodes = 
+  | typeof START 
+  | 'rewrite_query' 
+  | 'document_selector' 
+  | 'retrieve' 
+  | 'generate' 
+  | 'hallucination_check' 
+  | 'quality_check' 
+  | 'handle_retry' 
+  | 'insufficient_data';
 
 interface GraphContext {
   apiKey: string;
@@ -59,13 +70,15 @@ export function createRAGGraph(context: GraphContext) {
     return { answer: '抱歉，根据现有资料无法生成准确回答。' } as Partial<RAGState>;
   });
   
-  (workflow as any).addEdge('__start__', 'rewrite_query');
-  (workflow as any).addEdge('rewrite_query', 'document_selector');
-  (workflow as any).addEdge('document_selector', 'retrieve');
-  (workflow as any).addEdge('retrieve', 'generate');
-  (workflow as any).addEdge('generate', 'hallucination_check');
+  const typedWorkflow = workflow as StateGraph<typeof RAGStateAnnotation, RAGState, Partial<RAGState>, GraphNodes>;
   
-  (workflow as any).addConditionalEdges(
+  typedWorkflow.addEdge(START, 'rewrite_query');
+  typedWorkflow.addEdge('rewrite_query', 'document_selector');
+  typedWorkflow.addEdge('document_selector', 'retrieve');
+  typedWorkflow.addEdge('retrieve', 'generate');
+  typedWorkflow.addEdge('generate', 'hallucination_check');
+  
+  typedWorkflow.addConditionalEdges(
     'hallucination_check',
     (state: RAGState) => {
       console.log('[RAG Flow] Condition Check:', {
@@ -93,10 +106,10 @@ export function createRAGGraph(context: GraphContext) {
     }
   );
 
-  (workflow as any).addEdge('quality_check', END);
+  typedWorkflow.addEdge('quality_check', END);
   
-  (workflow as any).addEdge('handle_retry', 'rewrite_query');
-  (workflow as any).addEdge('insufficient_data', '__end__');
+  typedWorkflow.addEdge('handle_retry', 'rewrite_query');
+  typedWorkflow.addEdge('insufficient_data', END);
   
   return workflow.compile();
 }
@@ -237,7 +250,6 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
     // 3. Generate and Hallucination Check with Retry Logic
     let shouldRetry = true;
     let retryIteration = 0;
-    let streamedContent = '';
 
     while (shouldRetry && retryIteration <= MAX_RETRIES) {
       // Generate Node
@@ -247,7 +259,6 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
         state, 
         apiKey, 
         onChunk: (content: string) => {
-          streamedContent += content;
           controller.sendChunk(content);
         }
       });
@@ -305,8 +316,6 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
         // 发送重试事件，告诉客户端清除之前的内容
         controller.sendRetry(retryIteration, '检测到幻觉内容，正在重新生成');
 
-        // 重置流式内容和状态
-        streamedContent = '';
         state = { ...state, retry_count: retryIteration, answer: null };
         // Continue loop for retry
       } else {

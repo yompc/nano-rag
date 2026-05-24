@@ -12,8 +12,18 @@ import { useMessagesHeights } from '@/hooks/use-message-height';
 import { STEP_MAP } from '@/lib/constants';
 import type { LocalMessage } from '@/lib/session-storage';
 
+function convertLocalToMessage(messages: LocalMessage[]): Message[] {
+  return messages.map((msg) => ({
+    id: msg.id || crypto.randomUUID(),
+    role: msg.role,
+    content: msg.content,
+    timestamp: new Date(msg.timestamp),
+    sources: msg.sources,
+    thinkingSteps: msg.thinkingSteps,
+  }));
+}
+
 export default function HomePage() {
-  // 会话管理
   const {
     sessions,
     currentSessionId,
@@ -25,7 +35,7 @@ export default function HomePage() {
     deleteSessionById,
   } = useSessions();
 
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => convertLocalToMessage(currentMessages));
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
@@ -39,42 +49,11 @@ export default function HomePage() {
   const messagesLengthRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 从 localStorage 恢复历史消息
-  useEffect(() => {
-    if (sessionsLoading) return;
-
-    // 只在初始加载或切换会话时恢复，不要覆盖正在编辑的消息
-    if (messages.length === 0 && currentMessages.length > 0) {
-      const restoredMessages: Message[] = currentMessages.map((msg, index) => ({
-        id: msg.id || `restored-${Date.now()}-${index}`,
-        role: msg.role,
-        content: msg.content,
-        timestamp: new Date(msg.timestamp),
-        sources: msg.sources,
-        thinkingSteps: msg.thinkingSteps,
-      }));
-
-      setMessages(restoredMessages);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionsLoading, currentSessionId]);
-
-  // 切换会话并加载消息
   const handleSelectSession = useCallback((id: string) => {
     const newMessages = switchSession(id);
-    // 将 LocalMessage 转换为 Message
-    const restoredMessages: Message[] = newMessages.map((msg, index) => ({
-      id: msg.id || `switched-${Date.now()}-${index}`,
-      role: msg.role,
-      content: msg.content,
-      timestamp: new Date(msg.timestamp),
-      sources: msg.sources,
-      thinkingSteps: msg.thinkingSteps,
-    }));
-    setMessages(restoredMessages);
+    setMessages(convertLocalToMessage(newMessages));
   }, [switchSession]);
 
-  // 创建新会话并清空消息
   const handleNewSession = useCallback(() => {
     createNewSession();
     setMessages([]);
@@ -545,7 +524,7 @@ export default function HomePage() {
                     
                     return (
                       <div 
-                        key={message.id}
+                        key={message.id || `${index}-${crypto.randomUUID()}`}
                         style={{ minHeight: height || undefined }}
                       >
                         <ChatMessage

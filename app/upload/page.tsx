@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { PDFParser, type ParsedPDF } from '@/components/pdf-parser';
-import { ingestDocument, createDocument, ingestPage } from '@/app/actions/ingest';
+import { createDocument, ingestPage } from '@/app/actions/ingest';
 
 type DocType = 'manual' | 'faq' | 'api_doc';
 
@@ -458,29 +458,6 @@ export default function UploadPage() {
           variants={itemVariants}
           className="mt-8 text-center"
         >
-          <div className="flex items-center justify-center gap-4 mb-2">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <title>返回</title>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              返回首页
-            </Link>
-            <span className="text-zinc-300 dark:text-zinc-700">|</span>
-            <Link
-              href="/library"
-              className="inline-flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
-            >
-              查看文档库
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <title>文档库</title>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
-          </div>
           <p className="text-sm text-zinc-400 dark:text-zinc-500">支持PDF格式，最大100页</p>
         </motion.div>
       </motion.div>

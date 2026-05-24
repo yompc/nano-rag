@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { listDocuments, deleteDocument, type DocWithChunks } from '@/app/actions/library';
@@ -14,10 +14,11 @@ interface DocumentSidebarProps {
 
 export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
   const [docs, setDocs] = useState<DocWithChunks[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -32,8 +33,12 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
       fetchDocs();
+    }
+    if (!isOpen) {
+      hasFetchedRef.current = false;
     }
   }, [isOpen, fetchDocs]);
 

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { runRAGStream } from '@/lib/graph/rag-graph';
-import { encodeEvent, createTimestamp } from '@/lib/streaming/types';
+import { encodeEvent, createTimestamp, type StreamController, type SourceWithSimilarity, type StatusEvent, type QualityCheckEvent, type ThinkingEvent } from '@/lib/streaming/types';
 import type { D1Database } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -58,22 +58,22 @@ export async function POST(request: NextRequest) {
             controller.enqueue(encoder.encode(message));
           };
           
-          const streamController = {
-            sendStatus: (step: string, message: string, metadata?: any) =>
+          const streamController: StreamController = {
+            sendStatus: (step: StatusEvent['step'], message: string, metadata?: StatusEvent['metadata']) =>
               sendEvent('status', { step, message, metadata }),
             sendChunk: (content: string) =>
               sendEvent('chunk', { content }),
-            sendSources: (sources: any[]) =>
+            sendSources: (sources: SourceWithSimilarity[]) =>
               sendEvent('sources', { count: sources.length, sources }),
             sendError: (message: string, code?: string) =>
               sendEvent('error', { message, code }),
             sendDone: () =>
               sendEvent('done', {}),
-            sendQualityCheck: (hasIssues: boolean, issues: any[], fixedAnswer?: string) =>
+            sendQualityCheck: (hasIssues: boolean, issues: QualityCheckEvent['issues'], fixedAnswer?: string) =>
               sendEvent('quality_check', { hasIssues, issues, fixedAnswer }),
             sendRetry: (retryCount: number, reason: string) =>
               sendEvent('retry', { retryCount, reason }),
-            sendThinking: (step: string, content: string, metadata?: any) =>
+            sendThinking: (step: ThinkingEvent['step'], content: string, metadata?: ThinkingEvent['metadata']) =>
               sendEvent('thinking', { step, content, metadata })
           };
           
