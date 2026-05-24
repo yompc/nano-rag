@@ -2,11 +2,9 @@ import type {
   D1Database, 
   Doc, 
   Chunk, 
-  ChatLog, 
   Checkpoint,
   CreateDocInput,
-  CreateChunkInput,
-  CreateChatLogInput 
+  CreateChunkInput 
 } from './types';
 
 export async function createDoc(db: D1Database, input: CreateDocInput): Promise<number> {
@@ -73,44 +71,6 @@ export async function getAllChunks(db: D1Database): Promise<Chunk[]> {
     .all<Chunk>();
   
   return result.results;
-}
-
-export async function createChatLog(db: D1Database, input: CreateChatLogInput): Promise<number> {
-  const result = await db
-    .prepare(`INSERT INTO chat_logs (question, rewritten_question, retrieved_chunk_ids, answer, grade) 
-              VALUES (?, ?, ?, ?, ?)`)
-    .bind(
-      input.question,
-      input.rewritten_question || null,
-      input.retrieved_chunk_ids ? JSON.stringify(input.retrieved_chunk_ids) : null,
-      input.answer,
-      input.grade || null
-    )
-    .run();
-  
-  return result.meta.last_row_id;
-}
-
-export async function getChatLogs(db: D1Database, limit = 50): Promise<ChatLog[]> {
-  const result = await db
-    .prepare('SELECT * FROM chat_logs ORDER BY created_at DESC LIMIT ?')
-    .bind(limit)
-    .all<ChatLog>();
-  
-  return result.results;
-}
-
-export async function updateChatLogGrade(
-  db: D1Database, 
-  id: number, 
-  grade: 'pass' | 'fail' | 'insufficient'
-): Promise<boolean> {
-  const result = await db
-    .prepare('UPDATE chat_logs SET grade = ? WHERE id = ?')
-    .bind(grade, id)
-    .run();
-  
-  return result.meta.changes > 0;
 }
 
 export async function saveCheckpoint(

@@ -16,16 +16,6 @@ export interface Chunk {
   created_at: number;
 }
 
-export interface ChatLog {
-  id: number;
-  question: string;
-  rewritten_question: string | null;
-  retrieved_chunk_ids: string | null;
-  answer: string;
-  grade: 'pass' | 'fail' | 'insufficient' | null;
-  created_at: number;
-}
-
 export interface Checkpoint {
   thread_id: string;
   checkpoint: string;
@@ -60,14 +50,6 @@ export interface CreateChunkInput {
   embedding: number[];
   keywords: string[];
   char_count: number;
-}
-
-export interface CreateChatLogInput {
-  question: string;
-  rewritten_question?: string;
-  retrieved_chunk_ids?: number[];
-  answer: string;
-  grade?: Grade;
 }
 
 export interface D1Database {
