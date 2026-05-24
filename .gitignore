@@ -48,4 +48,6 @@ next-env.d.ts
 .wrangler
 .claude
 .playwright-mcp
+
+# Wrangler
 wrangler.toml
