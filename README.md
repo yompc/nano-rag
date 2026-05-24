@@ -3,7 +3,7 @@
 <p align="center">
   <strong>基于 LangGraph 的智能文档问答系统</strong>
   <br>
-  <sub>Next.js + Cloudflare Workers + D1 + Mistral AI</sub>
+  <sub>Next.js + Cloudflare Workers + D1</sub>
 </p>
 
 <p align="center">
@@ -11,6 +11,10 @@
   <a href="#快速开始">快速开始</a> •
   <a href="#架构设计">架构设计</a> •
   <a href="#部署">部署</a>
+</p>
+
+<p align="center">
+  <a href="https://nano-rag.yomigi.com"><strong>在线体验 →</strong></a>
 </p>
 
 ---
@@ -64,8 +68,6 @@ Nano-RAG 是一个轻量级的检索增强生成（RAG）应用，专为个人�
 | 前端 | Next.js 16, React 19, Tailwind CSS 4 |
 | 后端 | Cloudflare Workers, OpenNext |
 | 数据库 | Cloudflare D1 (SQLite) |
-| 向量 | Mistral Embedding API (1024维) |
-| LLM | Mistral AI |
 | 编排 | LangGraph |
 
 ## 快速开始
@@ -73,7 +75,6 @@ Nano-RAG 是一个轻量级的检索增强生成（RAG）应用，专为个人�
 ### 环境要求
 
 - Node.js 22.13+
-- Mistral API Key
 
 ### 安装
 
@@ -87,7 +88,7 @@ npm install
 
 # 配置环境变量
 cp .dev.vars.example .dev.vars
-# 编辑 .dev.vars，填入 MISTRAL_API_KEY
+# 编辑 .dev.vars，填入 OPENAI_API_KEY
 
 # 初始化本地数据库
 npx wrangler d1 execute nano-rag-db --local --file=./migrations/0001_init.sql
@@ -117,7 +118,7 @@ npx wrangler d1 create nano-rag-production-db
 npx wrangler d1 execute nano-rag-production-db --remote --file=./migrations/0001_init.sql
 
 # 配置 Secrets
-npx wrangler secret put MISTRAL_API_KEY
+npx wrangler secret put OPENAI_API_KEY
 
 # 部署
 npm run deploy
@@ -167,28 +168,6 @@ lib/
 | Top-K 检索 | 5 | `lib/retrieve.ts` |
 | 相似度阈值 | 0.5 | `lib/retrieve.ts` |
 | 最大重试次数 | 2 | `lib/graph/rag-graph.ts` |
-
-## 路线图
-
-- [ ] 支持更多文档格式（Word、Markdown）
-- [ ] 多语言支持
-- [ ] 对话历史导出
-- [ ] API Key 管理
-- [ ] 向量数据库迁移（Cloudflare Vectorize）
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request。
-
-## 许可证
-
-MIT
-
----
-
-<p align="center">
-  <a href="https://nano-rag.yomigi.com"><strong>在线体验 →</strong></a>
-</p>
 
 <p align="center">
   <sub>构建 with ❤️ using Next.js, Cloudflare Workers, and LangGraph</sub>
