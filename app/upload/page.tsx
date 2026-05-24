@@ -479,7 +479,7 @@ export default function UploadPage() {
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-sm text-[var(--body)]">支持PDF格式，最大100页</p>
+          <p className="text-sm text-[var(--body)]">为符合大陆法律法规，上传文档需密码验证</p>
         </div>
       </div>
     </div>
