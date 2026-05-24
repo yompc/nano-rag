@@ -99,10 +99,22 @@ npx wrangler d1 execute nano-rag-production-db --remote --file=./migrations/0001
 
 ### 2.4 配置生产环境变量
 
+生产环境的敏感信息需要通过 Wrangler secrets 设置：
+
 ```bash
-npx wrangler secret put MISTRAL_API_KEY
+# 设置 Mistral/OpenAI API Key
+npx wrangler secret put OPENAI_API_KEY
 # 按提示输入 API Key
+
+# 设置管理员密码（用于访问管理界面和受保护的 API）
+npx wrangler secret put ADMIN_PASSWORD
+# 按提示输入管理员密码
 ```
+
+**重要提示**：
+- 密码和 API Key 等敏感信息不要硬编码在代码或配置文件中
+- 使用 `wrangler secret list` 查看已配置的 secrets
+- Secrets 在 Cloudflare Dashboard 的 Workers > Settings > Variables 中管理
 
 ### 2.5 部署应用
 

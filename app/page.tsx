@@ -35,7 +35,8 @@ export default function HomePage() {
     deleteSessionById,
   } = useSessions();
 
-  const [messages, setMessages] = useState<Message[]>(() => convertLocalToMessage(currentMessages));
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
@@ -68,9 +69,17 @@ export default function HomePage() {
     }
   }, [deleteSessionById, currentSessionId]);
 
+  // 初始化：客户端 hydration 后读取 localStorage
+  useEffect(() => {
+    if (!isHydrated) {
+      setMessages(convertLocalToMessage(currentMessages));
+      setIsHydrated(true);
+    }
+  }, [isHydrated, currentMessages]);
+
   // 消息变化时保存到 localStorage
   useEffect(() => {
-    if (messages.length > 0 && !sessionsLoading) {
+    if (messages.length > 0 && !sessionsLoading && isHydrated) {
       // 将 Message 转换为 LocalMessage
       const localMessages: LocalMessage[] = messages.map((msg) => ({
         id: msg.id,
@@ -82,7 +91,7 @@ export default function HomePage() {
       }));
       saveCurrentSession(localMessages);
     }
-  }, [messages, sessionsLoading, saveCurrentSession]);
+  }, [messages, sessionsLoading, saveCurrentSession, isHydrated]);
 
   useEffect(() => {
     if (messages.length !== messagesLengthRef.current) {

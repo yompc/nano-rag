@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { PDFParser, type ParsedPDF } from '@/components/pdf-parser';
 import { createDocument, ingestPage } from '@/app/actions/ingest';
+import { PasswordDialog } from '@/components/password-dialog';
 
 type DocType = 'manual' | 'faq' | 'api_doc';
 
@@ -25,6 +26,8 @@ export default function UploadPage() {
   const [currentDocId, setCurrentDocId] = useState<number | null>(null);
   const [failedPage, setFailedPage] = useState<number | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | undefined>();
 
   const handleParsed = useCallback((result: ParsedPDF) => {
     setParsedPDF(result);
@@ -37,8 +40,68 @@ export default function UploadPage() {
     setParsedPDF(null);
   }, []);
 
-  const handleUpload = async () => {
+  const performUpload = useCallback(async (password: string) => {
     if (!parsedPDF) return;
+
+    const createResult = await createDocument({
+      filename: parsedPDF.filename,
+      doc_type: docType,
+      password
+    });
+
+    if (!createResult.success) {
+      if (createResult.error?.includes('密码') || createResult.error?.includes('password')) {
+        setPasswordError(createResult.error);
+        setPasswordDialogOpen(true);
+        setIsUploading(false);
+        return;
+      }
+      throw new Error(createResult.error);
+    }
+
+    const docId = createResult.docId!;
+    setCurrentDocId(docId);
+
+    for (let i = 0; i < parsedPDF.pages.length; i++) {
+      setCurrentPage(i + 1);
+
+      const pageResult = await ingestPage({
+        docId,
+        filename: parsedPDF.filename,
+        doc_type: docType,
+        page: parsedPDF.pages[i],
+        pageIndex: i,
+        totalPages: parsedPDF.pages.length
+      });
+
+      if (!pageResult.success) {
+        setFailedPage(i);
+        throw new Error(`第${i + 1}页处理失败: ${pageResult.error}`);
+      }
+
+      setUploadProgress(pageResult.progress);
+    }
+
+    setUploadProgress(100);
+    setSuccess(true);
+    setTimeout(() => {
+      setParsedPDF(null);
+      setSuccess(false);
+      setUploadProgress(0);
+      setCurrentPage(0);
+      setCurrentDocId(null);
+    }, 2000);
+  }, [parsedPDF, docType]);
+
+  const handlePasswordSubmit = useCallback(async (password: string, remember: boolean) => {
+    if (!parsedPDF) return;
+
+    if (remember) {
+      localStorage.setItem('admin_password', password);
+    }
+
+    setPasswordDialogOpen(false);
+    setPasswordError(undefined);
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -47,47 +110,32 @@ export default function UploadPage() {
     setFailedPage(null);
 
     try {
-      const createResult = await createDocument({
-        filename: parsedPDF.filename,
-        doc_type: docType
-      });
-      
-      if (!createResult.success) {
-        throw new Error(createResult.error);
-      }
-      
-      const docId = createResult.docId!;
-      setCurrentDocId(docId);
-      
-      for (let i = 0; i < parsedPDF.pages.length; i++) {
-        setCurrentPage(i + 1);
-        
-        const pageResult = await ingestPage({
-          docId,
-          filename: parsedPDF.filename,
-          doc_type: docType,
-          page: parsedPDF.pages[i],
-          pageIndex: i,
-          totalPages: parsedPDF.pages.length
-        });
-        
-        if (!pageResult.success) {
-          setFailedPage(i);
-          throw new Error(`第${i + 1}页处理失败: ${pageResult.error}`);
-        }
-        
-        setUploadProgress(pageResult.progress);
-      }
-      
-      setUploadProgress(100);
-      setSuccess(true);
-      setTimeout(() => {
-        setParsedPDF(null);
-        setSuccess(false);
-        setUploadProgress(0);
-        setCurrentPage(0);
-        setCurrentDocId(null);
-      }, 2000);
+      await performUpload(password);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '上传失败');
+    } finally {
+      setIsUploading(false);
+    }
+  }, [parsedPDF, performUpload]);
+
+  const handleUpload = async () => {
+    if (!parsedPDF) return;
+
+    const savedPassword = localStorage.getItem('admin_password');
+
+    if (!savedPassword) {
+      setPasswordDialogOpen(true);
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    setError(null);
+    setSuccess(false);
+    setFailedPage(null);
+
+    try {
+      await performUpload(savedPassword);
     } catch (err) {
       setError(err instanceof Error ? err.message : '上传失败');
     } finally {
@@ -205,6 +253,12 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen bg-[var(--canvas)]">
+      <PasswordDialog
+        open={passwordDialogOpen}
+        onClose={() => { setPasswordDialogOpen(false); setPasswordError(undefined); }}
+        onSubmit={handlePasswordSubmit}
+        error={passwordError}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">

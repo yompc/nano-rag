@@ -190,12 +190,11 @@ const ThinkingProcess = memo(function ThinkingProcess({
 }: ThinkingProcessProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
-  // 思考完成后自动折叠（延迟 800ms 让用户看到"完成"徽章）
   useEffect(() => {
     if (isComplete) {
       const timer = setTimeout(() => {
         setIsExpanded(false);
-      }, 800);
+      }, 300);
       
       return () => clearTimeout(timer);
     }
@@ -219,15 +218,6 @@ const ThinkingProcess = memo(function ThinkingProcess({
           <span className="font-medium text-xs" style={{ color: 'var(--foreground)' }}>
             思考过程
           </span>
-          {isComplete && (
-            <motion.span
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--success)] text-white"
-            >
-              完成
-            </motion.span>
-          )}
         </div>
         <motion.svg
           animate={{ rotate: isExpanded ? 180 : 0 }}

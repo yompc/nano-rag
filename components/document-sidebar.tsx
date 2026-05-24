@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { listDocuments, deleteDocument, type DocWithChunks } from '@/app/actions/library';
 import { DOC_TYPE_LABELS } from '@/lib/constants';
 import { formatDate } from '@/lib/utils';
+import { PasswordDialog } from '@/components/password-dialog';
 
 interface DocumentSidebarProps {
   isOpen: boolean;
@@ -17,6 +18,9 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | undefined>();
+  const [pendingDeleteDocId, setPendingDeleteDocId] = useState<number | null>(null);
   const hasFetchedRef = useRef(false);
 
   const fetchDocs = useCallback(async () => {
@@ -41,16 +45,46 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
     }
   }, [isOpen, fetchDocs]);
 
-  const handleDelete = async (docId: number) => {
+  const handleDelete = async (docId: number, password?: string) => {
     setDeleting(true);
-    const result = await deleteDocument(docId);
+    setError(null);
+    const result = await deleteDocument(docId, password);
     if (result.success) {
       setDocs((prev) => prev.filter((d) => d.id !== docId));
       setDeleteConfirm(null);
+      setPendingDeleteDocId(null);
+      setPasswordError(undefined);
     } else {
-      setError(result.error || '删除失败');
+      if (result.error?.includes('密码') || result.error?.includes('password')) {
+        setPasswordError(result.error);
+        setPasswordDialogOpen(true);
+        setDeleteConfirm(null);
+      } else {
+        setError(result.error || '删除失败');
+      }
     }
     setDeleting(false);
+  };
+
+  const handlePasswordSubmit = (password: string, remember: boolean) => {
+    if (remember) {
+      localStorage.setItem('admin_password', password);
+    }
+    setPasswordDialogOpen(false);
+    if (pendingDeleteDocId !== null) {
+      setDeleteConfirm(pendingDeleteDocId);
+    }
+  };
+
+  const handleDeleteClick = (docId: number) => {
+    const savedPassword = localStorage.getItem('admin_password');
+    if (savedPassword) {
+      setDeleteConfirm(docId);
+    } else {
+      setPendingDeleteDocId(docId);
+      setPasswordError(undefined);
+      setPasswordDialogOpen(true);
+    }
   };
 
   return (
@@ -163,7 +197,7 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDelete(doc.id)}
+                              onClick={() => handleDelete(doc.id, localStorage.getItem('admin_password') || undefined)}
                               disabled={deleting}
                               className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-[var(--primary)] hover:opacity-90 rounded-lg transition-opacity disabled:opacity-50"
                             >
@@ -189,7 +223,7 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
                           </div>
                           <button
                             type="button"
-                            onClick={() => setDeleteConfirm(doc.id)}
+                            onClick={() => handleDeleteClick(doc.id)}
                             className="p-1.5 text-[var(--primary)] hover:opacity-80 transition-opacity rounded-lg"
                             aria-label="删除"
                           >
@@ -217,6 +251,17 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
           </div>
         </>
       )}
+
+      <PasswordDialog
+        open={passwordDialogOpen}
+        onClose={() => {
+          setPasswordDialogOpen(false);
+          setPendingDeleteDocId(null);
+          setPasswordError(undefined);
+        }}
+        onSubmit={handlePasswordSubmit}
+        error={passwordError}
+      />
     </>
   );
 }

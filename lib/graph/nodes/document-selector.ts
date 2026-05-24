@@ -5,7 +5,7 @@
 
 import type { RAGState } from '../state';
 import { CHAT_CONFIG } from '@/lib/model-config';
-import { getAllDocs, getDocKeywords } from '@/lib/db';
+import { getCachedAllDocs, getCachedDocKeywords } from '@/lib/db';
 import type { Doc, D1Database } from '@/lib/types';
 
 const SELECTOR_SYSTEM_PROMPT = `你是文档选择专家。分析用户问题，从候选文档列表中选择最相关的文档。
@@ -178,7 +178,7 @@ export async function documentSelectorNode(
 
   try {
     // 获取所有文档
-    const allDocs = await getAllDocs(db);
+    const allDocs = await getCachedAllDocs(db);
 
     // 如果没有文档，返回 undefined
     if (allDocs.length === 0) {
@@ -195,7 +195,7 @@ export async function documentSelectorNode(
     });
 
     const docIds = candidateDocs.map((d) => d.id);
-    const keywordsMap = await getDocKeywords(db, docIds);
+    const keywordsMap = await getCachedDocKeywords(db, docIds);
 
     const selectedIds = await selectDocsWithLLM(
       state.rewritten_question || state.question,

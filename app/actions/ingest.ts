@@ -5,7 +5,8 @@ import type { D1Database } from '@/lib/types';
 import { chunkText, type TextChunk } from '@/lib/chunking';
 import { getMistralEmbedding, validateEmbedding } from '@/lib/embedding';
 import { extractKeywords } from '@/lib/keywords';
-import { createDoc, deleteDoc, deleteChunksByDocId } from '@/lib/db';
+import { createDoc, deleteDoc, deleteChunksByDocId, invalidateCache } from '@/lib/db';
+import { verifyAdminPassword } from '@/lib/auth/password';
 
 const INGEST_CONFIG = {
   maxChunksPerDoc: 100,
@@ -152,6 +153,8 @@ export async function ingestDocument(input: IngestInput): Promise<IngestResult> 
         await env.DB.batch(batchStatements);
       }
 
+      await invalidateCache('all');
+      
       return {
         success: true,
         docId,
@@ -189,11 +192,17 @@ export async function ingestDocument(input: IngestInput): Promise<IngestResult> 
 export async function createDocument(input: {
   filename: string;
   doc_type: 'manual' | 'faq' | 'api_doc';
+  password?: string;
 }): Promise<{
   success: boolean;
   docId?: number;
   error?: string;
 }> {
+  const verification = await verifyAdminPassword(input.password);
+  if (!verification.valid) {
+    return { success: false, error: verification.error };
+  }
+  
   const { env } = (await getCloudflareContext({ async: true })) as unknown as { env: Env };
   
   if (!env.DB) {
@@ -328,6 +337,10 @@ export async function ingestPage(input: {
 
       const progress = Math.round(((input.pageIndex + 1) / input.totalPages) * 100);
       const isComplete = input.pageIndex === input.totalPages - 1;
+
+      if (isComplete) {
+        await invalidateCache('all');
+      }
 
       return {
         success: true,

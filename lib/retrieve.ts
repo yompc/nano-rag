@@ -6,7 +6,7 @@
 import type { D1Database, Doc } from './types';
 import { getMistralEmbedding } from './embedding';
 import { cosineSimilarity, parseEmbeddingToFloat32Array, toFloat32Array } from './vector-utils';
-import { getAllChunks, getChunksByDocIds } from './db';
+import { getCachedAllChunks, getCachedAllDocs, getCachedChunksByDocIds } from './db';
 
 /**
  * 检索结果项
@@ -45,26 +45,15 @@ export async function retrieve(
   const queryVector = toFloat32Array(queryEmbedding);
 
   // 2. 获取所有chunks
-  const allChunks = await getAllChunks(db);
+  const allChunks = await getCachedAllChunks(db);
 
   if (allChunks.length === 0) {
     return [];
   }
 
-  // 3. 批量获取文档信息（用于获取filename）
-  const docIds = [...new Set(allChunks.map(c => c.doc_id))];
-  const docMap = new Map<number, string>();
-
-  for (const docId of docIds) {
-    const doc = await db
-      .prepare('SELECT filename FROM docs WHERE id = ?')
-      .bind(docId)
-      .first<Pick<Doc, 'filename'>>();
-    
-    if (doc) {
-      docMap.set(docId, doc.filename);
-    }
-  }
+  // 3. 批量获取文档信息
+  const allDocs = await getCachedAllDocs(db);
+  const docMap = new Map(allDocs.map(d => [d.id, d.filename]));
 
   // 4. 计算每个chunk的相似度
   const scored = allChunks.map(chunk => {
@@ -141,26 +130,15 @@ export async function retrieveWithDocFilter(
   const queryVector = toFloat32Array(queryEmbedding);
 
   // 2. 获取指定文档的chunks
-  const chunks = await getChunksByDocIds(db, docIds);
+  const chunks = await getCachedChunksByDocIds(db, docIds);
 
   if (chunks.length === 0) {
     return [];
   }
 
-  // 3. 批量获取文档信息（用于获取filename）
-  const uniqueDocIds = [...new Set(chunks.map(c => c.doc_id))];
-  const docMap = new Map<number, string>();
-
-  for (const docId of uniqueDocIds) {
-    const doc = await db
-      .prepare('SELECT filename FROM docs WHERE id = ?')
-      .bind(docId)
-      .first<Pick<Doc, 'filename'>>();
-    
-    if (doc) {
-      docMap.set(docId, doc.filename);
-    }
-  }
+  // 3. 批量获取文档信息
+  const allDocs = await getCachedAllDocs(db);
+  const docMap = new Map(allDocs.map(d => [d.id, d.filename]));
 
   // 4. 计算每个chunk的相似度
   const scored = chunks.map(chunk => {

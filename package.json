@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env production",
     "test:e2e": "bash scripts/e2e-test.sh",
     "test:e2e:prod": "bash scripts/e2e-test.sh https://your-app.workers.dev"
   },

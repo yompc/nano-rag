@@ -2,7 +2,8 @@
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database, Doc } from '@/lib/types';
-import { listDocs, deleteDoc, deleteChunksByDocId, getChunksByDocId } from '@/lib/db';
+import { listDocs, deleteDoc, deleteChunksByDocId, getChunksByDocId, invalidateCache } from '@/lib/db';
+import { verifyAdminPassword } from '@/lib/auth/password';
 
 interface Env {
   DB: D1Database;
@@ -59,7 +60,13 @@ export async function listDocuments(): Promise<ListDocsResult> {
 /**
  * 删除文档及其所有 chunks
  */
-export async function deleteDocument(docId: number): Promise<DeleteDocResult> {
+export async function deleteDocument(docId: number, password?: string): Promise<DeleteDocResult> {
+  // 验证管理员密码
+  const verification = await verifyAdminPassword(password);
+  if (!verification.valid) {
+    return { success: false, error: verification.error };
+  }
+
   try {
     const { env } = (await getCloudflareContext({ async: true })) as unknown as { env: Env };
     
@@ -73,6 +80,8 @@ export async function deleteDocument(docId: number): Promise<DeleteDocResult> {
     if (!deleted) {
       return { success: false, error: '文档不存在或已被删除' };
     }
+
+    await invalidateCache('all');
 
     return { success: true };
   } catch (error) {

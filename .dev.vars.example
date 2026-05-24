@@ -1,6 +1,6 @@
 # Mistral API Key for Embedding and LLM
 # Get your key at: https://console.mistral.ai/api-keys/
-MISTRAL_API_KEY=your-mistral-api-key-here
+OPENAI_API_KEY=your-mistral-api-key-here
 
 # ============== 模型配置（可选，有默认值） ==============
 # 聊天模型（用于问答、关键词提取、查询改写、幻觉检测等）
@@ -15,3 +15,9 @@ MISTRAL_API_KEY=your-mistral-api-key-here
 # EMBEDDING_DIMENSIONS=1024
 # EMBEDDING_TIMEOUT=10000
 # EMBEDDING_MAX_RETRIES=3
+
+# ============== 管理员配置 ==============
+# 管理员密码（用于访问管理界面和受保护的 API）
+# 本地开发：在此文件中设置 ADMIN_PASSWORD=your-password
+# 生产环境：使用 wrangler secret put ADMIN_PASSWORD 设置
+# ADMIN_PASSWORD=

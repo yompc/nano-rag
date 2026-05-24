@@ -6,6 +6,13 @@ import type {
   CreateDocInput,
   CreateChunkInput 
 } from './types';
+import { 
+  buildCacheKey, 
+  getFromCache, 
+  setToCache, 
+  deleteFromCache,
+  CACHE_TYPES 
+} from './cache';
 
 export async function createDoc(db: D1Database, input: CreateDocInput): Promise<number> {
   const result = await db
@@ -140,7 +147,9 @@ export async function getDocKeywords(
         for (const k of keywords) {
           allKeywords.add(k);
         }
-      } catch {}
+      } catch {
+        // skip invalid JSON
+      }
     }
 
     keywordsMap.set(docId, Array.from(allKeywords).slice(0, 10));
@@ -161,4 +170,107 @@ export async function getChunksByDocIds(db: D1Database, docIds: number[]): Promi
     .all<Chunk>();
   
   return result.results;
+}
+
+export async function getCachedAllChunks(db: D1Database): Promise<Chunk[]> {
+  const cacheKey = buildCacheKey(CACHE_TYPES.CHUNKS, 'all');
+  
+  const cached = await getFromCache<Chunk[]>(cacheKey);
+  if (cached) return cached;
+  
+  const data = await getAllChunks(db);
+  await setToCache(cacheKey, data);
+  return data;
+}
+
+export async function getCachedAllDocs(db: D1Database): Promise<Doc[]> {
+  const cacheKey = buildCacheKey(CACHE_TYPES.DOCS, 'all');
+  
+  const cached = await getFromCache<Doc[]>(cacheKey);
+  if (cached) return cached;
+  
+  const data = await getAllDocs(db);
+  await setToCache(cacheKey, data);
+  return data;
+}
+
+export async function getCachedDoc(db: D1Database, id: number): Promise<Doc | null> {
+  const cacheKey = buildCacheKey(CACHE_TYPES.DOCS, String(id));
+  
+  const cached = await getFromCache<Doc>(cacheKey);
+  if (cached) return cached;
+  
+  const data = await getDoc(db, id);
+  if (data) {
+    await setToCache(cacheKey, data);
+  }
+  return data;
+}
+
+export async function getCachedDocKeywords(
+  db: D1Database,
+  docIds: number[]
+): Promise<Map<number, string[]>> {
+  const result = new Map<number, string[]>();
+
+  for (const docId of docIds) {
+    const cacheKey = buildCacheKey(CACHE_TYPES.KEYWORDS, String(docId));
+    
+    const cached = await getFromCache<string[]>(cacheKey);
+    if (cached) {
+      result.set(docId, cached);
+      continue;
+    }
+
+    const chunks = await db
+      .prepare('SELECT keywords_json FROM chunks WHERE doc_id = ?')
+      .bind(docId)
+      .all<{ keywords_json: string }>();
+
+    const allKeywords = new Set<string>();
+    for (const chunk of chunks.results) {
+      try {
+        const keywords = JSON.parse(chunk.keywords_json) as string[];
+        for (const k of keywords) {
+          allKeywords.add(k);
+        }
+      } catch {
+        // skip invalid JSON
+      }
+    }
+
+    const keywords = Array.from(allKeywords).slice(0, 10);
+    result.set(docId, keywords);
+    await setToCache(cacheKey, keywords);
+  }
+
+  return result;
+}
+
+export async function getCachedChunksByDocIds(db: D1Database, docIds: number[]): Promise<Chunk[]> {
+  if (docIds.length === 0) return [];
+
+  const sortedIds = [...docIds].sort((a, b) => a - b).join(',');
+  const cacheKey = buildCacheKey(CACHE_TYPES.CHUNKS, `by-docs/${sortedIds}`);
+  
+  const cached = await getFromCache<Chunk[]>(cacheKey);
+  if (cached) return cached;
+  
+  const data = await getChunksByDocIds(db, docIds);
+  await setToCache(cacheKey, data);
+  return data;
+}
+
+export async function invalidateCache(type: 'all' | 'chunks' | 'docs' | 'keywords'): Promise<void> {
+  if (type === 'all' || type === 'chunks') {
+    await deleteFromCache(buildCacheKey(CACHE_TYPES.CHUNKS, 'all'));
+  }
+  
+  if (type === 'all' || type === 'docs') {
+    await deleteFromCache(buildCacheKey(CACHE_TYPES.DOCS, 'all'));
+  }
+  
+  if (type === 'all') {
+    console.log('[Cache] Note: keywords/* and chunks/by-docs/* caches will expire by TTL');
+  }
 }
