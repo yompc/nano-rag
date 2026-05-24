@@ -4,12 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { listDocuments, deleteDocument, type DocWithChunks } from '@/app/actions/library';
-
-const DOC_TYPE_LABELS: Record<string, string> = {
-  manual: '手册',
-  faq: 'FAQ',
-  api_doc: 'API文档',
-};
+import { DOC_TYPE_LABELS } from '@/lib/constants';
+import { formatDate } from '@/lib/utils';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -57,16 +53,6 @@ export default function LibraryPage() {
       setError(result.error || '删除失败');
     }
     setDeleting(false);
-  };
-
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   return (
@@ -225,7 +211,7 @@ export default function LibraryPage() {
                                 {DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}
                               </span>
                               <span>{doc.chunk_count} 个片段</span>
-                              <span>{formatDate(doc.uploaded_at)}</span>
+                              <span>{formatDate(doc.uploaded_at, true)}</span>
                             </div>
                           </div>
                         </div>

@@ -239,8 +239,10 @@ export async function generateStreamNode(
   const { question, top_chunks } = state;
 
   if (top_chunks.length === 0) {
+    const noDocAnswer = '抱歉，没有找到相关的文档内容。请确保已上传相关文档。';
+    onChunk(noDocAnswer);
     return {
-      answer: '抱歉，没有找到相关的文档内容。请确保已上传相关文档。'
+      answer: noDocAnswer
     };
   }
 

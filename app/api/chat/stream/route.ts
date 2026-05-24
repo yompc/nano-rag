@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { runRAGStream } from '@/lib/graph/rag-graph';
 import { encodeEvent, createTimestamp } from '@/lib/streaming/types';
-import { addMessage, getRecentMessages, createChatSession } from '@/lib/chat-history';
 import type { D1Database } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
     
     const body = await request.json();
-    const { question, sessionId } = body;
+    const { question, messages: historyMessages } = body;
 
     if (!question || typeof question !== 'string') {
       return new Response('问题不能为空', {
@@ -43,7 +42,9 @@ export async function POST(request: NextRequest) {
 
     const encoder = new TextEncoder();
     const db = env.DB;
-    const currentSessionId = sessionId || await createChatSession(db, null, question.slice(0, 50));
+
+    // 使用前端传入的历史消息（从 localStorage 获取）
+    const recentMessages = historyMessages || [];
     
     const stream = new ReadableStream({
       async start(controller) {
@@ -52,9 +53,6 @@ export async function POST(request: NextRequest) {
         });
         
         try {
-          const recentMessages = await getRecentMessages(db, currentSessionId, 6);
-          await addMessage(db, currentSessionId, 'user', question);
-          
           const sendEvent = (eventType: string, data: object) => {
             const message = encodeEvent(eventType, { ...data, timestamp: createTimestamp() });
             controller.enqueue(encoder.encode(message));
@@ -69,8 +67,8 @@ export async function POST(request: NextRequest) {
               sendEvent('sources', { count: sources.length, sources }),
             sendError: (message: string, code?: string) =>
               sendEvent('error', { message, code }),
-            sendDone: (sessionId: string) =>
-              sendEvent('done', { sessionId }),
+            sendDone: () =>
+              sendEvent('done', {}),
             sendQualityCheck: (hasIssues: boolean, issues: any[], fixedAnswer?: string) =>
               sendEvent('quality_check', { hasIssues, issues, fixedAnswer }),
             sendRetry: (retryCount: number, reason: string) =>
@@ -79,17 +77,16 @@ export async function POST(request: NextRequest) {
               sendEvent('thinking', { step, content, metadata })
           };
           
-          const result = await runRAGStream({
+          await runRAGStream({
             question,
             messages: recentMessages,
             apiKey,
             db,
-            controller: streamController,
-            sessionId: currentSessionId
+            controller: streamController
           });
-          
-          await addMessage(db, currentSessionId, 'assistant', result.answer);
-          
+
+          // 显式关闭流
+          controller.close();
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '处理请求时出错';
           const errorEvent = encoder.encode(

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createTestGraph } from '@/lib/graph';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const graph = createTestGraph();
     const result = await graph.invoke({ input: 'Hello LangGraph' });

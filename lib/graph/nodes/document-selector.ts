@@ -5,11 +5,16 @@
 
 import type { RAGState } from '../state';
 import { CHAT_CONFIG } from '@/lib/model-config';
-import { getAllDocs } from '@/lib/db';
+import { getAllDocs, getDocKeywords } from '@/lib/db';
 import type { Doc, D1Database } from '@/lib/types';
 
 const SELECTOR_SYSTEM_PROMPT = `你是文档选择专家。分析用户问题，从候选文档列表中选择最相关的文档。
-选择标准：1) 文档内容可能包含问题答案 2) 文档主题与问题相关
+
+选择标准：
+1. 文档关键词与问题主题高度相关
+2. 文件名暗示文档内容可能与问题相关
+3. 如果关键词和文件名都不匹配，不要选择该文档
+
 只返回文档 ID 的 JSON 数组，如 [1, 5, 10]。如果没有相关文档，返回 []。`;
 
 interface MistralChatResponse {
@@ -26,27 +31,26 @@ interface DocumentSelectorInput {
   db: D1Database;
 }
 
-/**
- * 构建用户提示词
- * @param question - 用户问题
- * @param docs - 候选文档列表
- * @returns 格式化的提示词
- */
-function buildUserPrompt(question: string, docs: Doc[]): string {
-  const docList = docs.map(d => `- ID: ${d.id}, 文件名: ${d.filename}`).join('\n');
-  return `候选文档：\n${docList}\n\n问题：${question}\n\n返回相关文档 ID（JSON 数组）：`;
+function buildUserPrompt(
+  question: string,
+  docs: Doc[],
+  keywordsMap: Map<number, string[]>
+): string {
+  const docList = docs
+    .map((d) => {
+      const keywords = keywordsMap.get(d.id) || [];
+      const keywordsStr = keywords.length > 0 ? keywords.join(', ') : '无';
+      return `- ID: ${d.id}, 文件名: ${d.filename}, 关键词: ${keywordsStr}`;
+    })
+    .join('\n');
+
+  return `候选文档：\n${docList}\n\n问题：${question}\n\n请根据文件名和关键词，选择可能包含答案的文档。返回相关文档 ID 的 JSON 数组，如 [1, 5, 10]。如果没有相关文档，返回 []。`;
 }
 
-/**
- * 使用 LLM 选择相关文档
- * @param question - 用户问题
- * @param docs - 候选文档列表
- * @param apiKey - Mistral API 密钥
- * @returns 选中的文档 ID 数组，失败时返回 undefined
- */
 async function selectDocsWithLLM(
   question: string,
   docs: Doc[],
+  keywordsMap: Map<number, string[]>,
   apiKey: string
 ): Promise<number[] | undefined> {
   const maxRetries = 2;
@@ -66,7 +70,7 @@ async function selectDocsWithLLM(
           model: CHAT_CONFIG.model,
           messages: [
             { role: 'system', content: SELECTOR_SYSTEM_PROMPT },
-            { role: 'user', content: buildUserPrompt(question, docs) }
+            { role: 'user', content: buildUserPrompt(question, docs, keywordsMap) }
           ],
           temperature: CHAT_CONFIG.temperature,
           max_tokens: 100
@@ -190,10 +194,13 @@ export async function documentSelectorNode(
       candidateCount: candidateDocs.length
     });
 
-    // 使用 LLM 选择相关文档
+    const docIds = candidateDocs.map((d) => d.id);
+    const keywordsMap = await getDocKeywords(db, docIds);
+
     const selectedIds = await selectDocsWithLLM(
       state.rewritten_question || state.question,
       candidateDocs,
+      keywordsMap,
       apiKey
     );
 

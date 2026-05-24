@@ -40,7 +40,6 @@ export interface ErrorEvent extends BaseEvent {
 
 export interface DoneEvent extends BaseEvent {
   type: 'done';
-  sessionId: string;
 }
 
 export interface QualityCheckEvent extends BaseEvent {
@@ -63,7 +62,7 @@ export interface RetryEvent extends BaseEvent {
 
 export interface ThinkingEvent extends BaseEvent {
   type: 'thinking';
-  step: 'rewrite' | 'document_selection' | 'retrieval' | 'generation' | 'validation';
+  step: 'rewrite' | 'document_selector' | 'retrieve' | 'generate' | 'check';
   content: string;
   metadata?: {
     query?: string;
@@ -88,7 +87,7 @@ export interface StreamController {
   sendChunk: (content: string) => void;
   sendSources: (sources: SourceWithSimilarity[]) => void;
   sendError: (message: string, code?: string) => void;
-  sendDone: (sessionId: string) => void;
+  sendDone: () => void;
   sendQualityCheck: (hasIssues: boolean, issues: QualityCheckEvent['issues'], fixedAnswer?: string) => void;
   sendRetry: (retryCount: number, reason: string) => void;
   sendThinking: (step: ThinkingEvent['step'], content: string, metadata?: ThinkingEvent['metadata']) => void;

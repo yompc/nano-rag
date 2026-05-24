@@ -161,6 +161,34 @@ export async function getAllDocs(db: D1Database): Promise<Doc[]> {
   return result.results;
 }
 
+export async function getDocKeywords(
+  db: D1Database,
+  docIds: number[]
+): Promise<Map<number, string[]>> {
+  const keywordsMap = new Map<number, string[]>();
+
+  for (const docId of docIds) {
+    const chunks = await db
+      .prepare('SELECT keywords_json FROM chunks WHERE doc_id = ?')
+      .bind(docId)
+      .all<{ keywords_json: string }>();
+
+    const allKeywords = new Set<string>();
+    for (const chunk of chunks.results) {
+      try {
+        const keywords = JSON.parse(chunk.keywords_json) as string[];
+        for (const k of keywords) {
+          allKeywords.add(k);
+        }
+      } catch {}
+    }
+
+    keywordsMap.set(docId, Array.from(allKeywords).slice(0, 10));
+  }
+
+  return keywordsMap;
+}
+
 export async function getChunksByDocIds(db: D1Database, docIds: number[]): Promise<Chunk[]> {
   if (docIds.length === 0) {
     return [];

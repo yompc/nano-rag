@@ -10,6 +10,11 @@
   --muted: #86868b;
   --success: #34c759;
   --error: #ff3b30;
+  --warning: #f59e0b;
+  --warning-bg: #fef9e7;
+  --warning-border: #f0e68c;
+  --warning-text: #b45309;
+  --warning-icon: #f59e0b;
   
   --user-bubble: #0071e3;
   --user-text: #ffffff;

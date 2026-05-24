@@ -26,30 +26,34 @@ export async function retrieveNode(
   
   const query = state.rewritten_question || state.question;
   const selectedDocIds = state.selected_doc_ids;
-  const hasFilter = !!selectedDocIds && selectedDocIds.length > 0;
   
   console.log('[Retrieve Node]', {
     status: 'starting',
-    hasDocFilter: hasFilter,
-    filterDocCount: selectedDocIds?.length ?? 0,
-    filterDocIds: hasFilter ? selectedDocIds : []
+    selectedDocIdsType: selectedDocIds === undefined ? 'undefined' : 'array',
+    filterDocCount: selectedDocIds?.length ?? 0
   });
   
   try {
     let chunks: RetrievedChunk[];
     
-    if (hasFilter) {
-      console.log('[Retrieve Node]', { status: 'using_filtered_retrieval' });
-      chunks = await retrieveWithDocFilter(query, selectedDocIds!, apiKey, db);
-    } else {
-      console.log('[Retrieve Node]', { status: 'using_full_retrieval' });
+    // 情况1: selected_doc_ids === undefined → 全库检索（回退）
+    // 情况2: selected_doc_ids === [] → 返回空（明确无相关文档）
+    // 情况3: selected_doc_ids 非空数组 → 过滤检索
+    if (selectedDocIds === undefined) {
+      console.log('[Retrieve Node]', { status: 'using_full_retrieval', reason: 'no_selector_result' });
       chunks = await retrieve(query, apiKey, db);
+    } else if (selectedDocIds.length === 0) {
+      console.log('[Retrieve Node]', { status: 'no_relevant_docs', reason: 'selector_returned_empty' });
+      chunks = [];
+    } else {
+      console.log('[Retrieve Node]', { status: 'using_filtered_retrieval', docCount: selectedDocIds.length });
+      chunks = await retrieveWithDocFilter(query, selectedDocIds, apiKey, db);
     }
     
     console.log('[Retrieve Node]', {
       status: 'completed',
       resultChunkCount: chunks.length,
-      usedDocFilter: hasFilter
+      usedDocFilter: selectedDocIds !== undefined && selectedDocIds.length > 0
     });
     
     return { top_chunks: chunks };

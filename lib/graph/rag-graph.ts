@@ -151,7 +151,6 @@ export async function runRAG(input: RunRAGInput): Promise<RunRAGResult> {
 
 interface RunRAGStreamInput extends RunRAGInput {
   controller: StreamController;
-  sessionId: string;
 }
 
 /**
@@ -161,7 +160,7 @@ interface RunRAGStreamInput extends RunRAGInput {
  * @returns RAG执行结果
  */
 export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResult> {
-  const { question, messages, apiKey, db, controller, sessionId } = input;
+  const { question, messages, apiKey, db, controller } = input;
 
   let state: RAGState = {
     question,
@@ -204,7 +203,7 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
       selectedCount: state.selected_doc_ids?.length ?? 0
     });
     const selectedDocs = state.selected_doc_ids?.length || 0;
-    controller.sendThinking('document_selection', `从文档库中选择了 ${selectedDocs} 个相关文档`, {
+      controller.sendThinking('document_selector', `从文档库中选择了 ${selectedDocs} 个相关文档`, {
       documents: state.selected_doc_ids?.map(id => id.toString()) || []
     });
 
@@ -228,7 +227,7 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
       controller.sendSources(finalSources);
     }
     if (state.top_chunks.length > 0) {
-      controller.sendThinking('retrieval', `检索到 ${state.top_chunks.length} 个相关文档片段`, {
+      controller.sendThinking('retrieve', `检索到 ${state.top_chunks.length} 个相关文档片段`, {
         documents: state.top_chunks.map(c => c.filename),
         confidence: state.top_chunks[0]?.similarity
       });
@@ -254,7 +253,7 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
       });
       state = { ...state, ...generateResult };
       controller.sendStatus('generate', '回答生成完成', { duration: Date.now() - generateStart, retryCount: retryIteration });
-      controller.sendThinking('generation', `基于检索到的 ${finalSources.length} 个文档片段生成回答`, {
+      controller.sendThinking('generate', `基于检索到的 ${finalSources.length} 个文档片段生成回答`, {
         documents: finalSources.map(s => s.filename)
       });
 
@@ -265,7 +264,7 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
       state = { ...state, ...checkResult };
       controller.sendStatus('check', '验证完成', { duration: Date.now() - checkStart });
       const checkResultText = state.hallucination === false ? '通过' : '未通过';
-      controller.sendThinking('validation', `回答验证${checkResultText}${state.retry_count > 0 ? ` (第 ${state.retry_count} 次重试)` : ''}`);
+      controller.sendThinking('check', `回答验证${checkResultText}${state.retry_count > 0 ? ` (第 ${state.retry_count} 次重试)` : ''}`);
 
       // Check if we need to retry
       if (state.hallucination === false) {
@@ -306,23 +305,22 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
         // 发送重试事件，告诉客户端清除之前的内容
         controller.sendRetry(retryIteration, '检测到幻觉内容，正在重新生成');
 
-        // Increment retry count in state for next iteration
-        state = { ...state, retry_count: retryIteration };
+        // 重置流式内容和状态
+        streamedContent = '';
+        state = { ...state, retry_count: retryIteration, answer: null };
         // Continue loop for retry
       } else {
         // Max retries reached, return insufficient data message
         shouldRetry = false;
         finalAnswer = '抱歉，根据现有资料无法生成准确回答。';
+        // 清除之前的内容并发送最终消息
+        controller.sendRetry(retryIteration + 1, '验证未通过，显示最佳答案');
+        controller.sendChunk(finalAnswer);
       }
     }
 
-    // 如果流式传输没有成功发送任何内容，确保答案发送给前端
-    if (!streamedContent && finalAnswer) {
-      controller.sendChunk(finalAnswer);
-    }
-
     // Send done event
-    controller.sendDone(sessionId);
+    controller.sendDone();
 
     return {
       answer: finalAnswer || '未能生成回答',

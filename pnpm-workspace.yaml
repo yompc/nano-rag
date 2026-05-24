@@ -6,3 +6,4 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - miniflare@4.20260521.0
   - wrangler@4.94.0
+  - '@cloudflare/workers-types@4.20260523.1'

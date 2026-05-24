@@ -25,7 +25,7 @@ export interface RetrievedChunk {
  */
 const RETRIEVE_CONFIG = {
   topK: 5,  // 返回Top-5 chunks
-  minSimilarity: 0.5  // 最低相似度阈值
+  minSimilarity: 0.8  // 最低相似度阈值
 };
 
 /**

@@ -19,8 +19,6 @@ export interface ChatSession {
   updatedAt: number;
 }
 
-const MAX_HISTORY_LENGTH = 20;
-
 /**
  * 创建新的对话会话
  * @param db - D1数据库

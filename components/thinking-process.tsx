@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, memo } from 'react';
 
 export interface SourceWithSimilarity {
   filename: string;
@@ -110,7 +110,8 @@ function DocumentPreview({ source, index }: { source: SourceWithSimilarity; inde
 
 function StepItem({ step, isExpanded }: { step: ThinkingStep; isExpanded: boolean }) {
   const hasSources = step.metadata?.sources && step.metadata.sources.length > 0;
-  const hasQueryRewrite = step.metadata?.originalQuery && step.metadata?.rewrittenQuery;
+  const hasQueryRewrite = step.metadata?.originalQuery && step.metadata?.rewrittenQuery && 
+    step.metadata.originalQuery !== step.metadata.rewrittenQuery;
 
   return (
     <motion.div
@@ -185,7 +186,11 @@ function StepItem({ step, isExpanded }: { step: ThinkingStep; isExpanded: boolea
   );
 }
 
-export function ThinkingProcess({ steps, isComplete, className = '' }: ThinkingProcessProps) {
+const ThinkingProcess = memo(function ThinkingProcess({ 
+  steps, 
+  isComplete, 
+  className = '' 
+}: ThinkingProcessProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
   if (steps.length === 0) return null;
@@ -255,4 +260,12 @@ export function ThinkingProcess({ steps, isComplete, className = '' }: ThinkingP
       </AnimatePresence>
     </motion.div>
   );
-}
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.steps === nextProps.steps &&
+    prevProps.isComplete === nextProps.isComplete &&
+    prevProps.className === nextProps.className
+  );
+});
+
+export { ThinkingProcess };
