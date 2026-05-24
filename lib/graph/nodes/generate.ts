@@ -129,6 +129,7 @@ async function generateAnswer(input: GenerateAnswerInput): Promise<string> {
         model: CHAT_CONFIG.model,
         messages: messagesArray,
         temperature: CHAT_CONFIG.temperature,
+        max_tokens: CHAT_CONFIG.maxTokens,
         stream: false
       }),
       signal: controller.signal
@@ -184,6 +185,7 @@ async function generateStream(input: GenerateStreamInput): Promise<string> {
       model: CHAT_CONFIG.model,
       messages: messagesArray,
       temperature: CHAT_CONFIG.temperature,
+      max_tokens: CHAT_CONFIG.maxTokens,
       stream: true
     })
   });

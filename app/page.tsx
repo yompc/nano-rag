@@ -41,6 +41,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [historySidebarOpen, setHistorySidebarOpen] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(768);
@@ -435,20 +436,29 @@ export default function HomePage() {
 
   return (
     <div className="flex h-screen bg-[var(--canvas)]">
-      <div className="hidden md:block">
-        <SessionSidebar
-          sessions={sessions}
-          currentSessionId={currentSessionId}
-          onSelectSession={handleSelectSession}
-          onNewSession={handleNewSession}
-          onDeleteSession={handleDeleteSession}
-        />
-      </div>
+      <SessionSidebar
+        sessions={sessions}
+        currentSessionId={currentSessionId}
+        onSelectSession={handleSelectSession}
+        onNewSession={handleNewSession}
+        onDeleteSession={handleDeleteSession}
+        isOpen={historySidebarOpen}
+        onClose={() => setHistorySidebarOpen(false)}
+      />
 
       <div className="flex-1 flex flex-col min-w-0 md:ml-0" ref={containerRef}>
-        {/* 顶部导航栏 */}
         <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--hairline)] bg-[var(--canvas)]">
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setHistorySidebarOpen(true)}
+              className="md:hidden p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors"
+              aria-label="打开历史记录"
+            >
+              <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
             <img src="/logo.svg" alt="Nano RAG" className="w-8 h-8" />
             <span className="font-display font-semibold text-base md:text-lg text-[var(--ink)]">Nano RAG</span>
           </div>
@@ -456,8 +466,9 @@ export default function HomePage() {
             <Link
               href="/upload"
               className="p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors"
+              aria-label="上传文档"
             >
-              <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             </Link>
@@ -467,7 +478,7 @@ export default function HomePage() {
               className="p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors relative"
               aria-label="打开文档库"
             >
-              <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
               {showLibraryBubble && (
@@ -480,11 +491,9 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* 主内容区 */}
         <div className="flex-1 overflow-y-auto bg-[var(--canvas)]">
           <div className="max-w-3xl mx-auto">
             {!hasMessages ? (
-              /* 空状态 - 居中大输入框 */
               <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] px-4">
                 <img src="/logo.svg" alt="Nano RAG" className="w-16 h-16 mb-6" />
                 <h1 className="text-xl md:text-2xl font-semibold text-[var(--ink)] mb-2">
@@ -494,7 +503,6 @@ export default function HomePage() {
                   基于文档的智能问答系统
                 </p>
 
-                {/* 大输入框 */}
                 <div className="w-full max-w-2xl">
                   <div className="relative">
                     <textarea
@@ -511,8 +519,9 @@ export default function HomePage() {
                       onClick={sendStreamingMessage}
                       disabled={loading || !input.trim()}
                       className="btn-primary absolute right-3 bottom-3 w-10 h-10 !p-0 rounded-full flex items-center justify-center transition-transform duration-150 hover:scale-105 active:scale-95"
+                      aria-label="发送"
                     >
-                      <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                       </svg>
                     </button>
@@ -523,7 +532,6 @@ export default function HomePage() {
                 </div>
               </div>
             ) : (
-              /* 有消息时的聊天界面 */
               <div className="px-4 py-6">
                 <AnimatePresence>
                   {displayMessages.map((message, index) => {
@@ -550,9 +558,9 @@ export default function HomePage() {
                   {loading && displayMessages[displayMessages.length - 1]?.role === 'user' && (
                     <div className="flex items-center gap-2 mt-4">
                       <div className="flex gap-1">
-<div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />
-                  <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse animation-delay-200" />
-                  <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse animation-delay-400" />
+                        <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />
+                        <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse animation-delay-200" />
+                        <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse animation-delay-400" />
                       </div>
                       <span className="text-sm text-[var(--muted-soft)]">
                         AI 正在思考...
@@ -567,7 +575,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 底部输入框 - 有消息时显示 */}
         {hasMessages && (
           <div className="border-t border-[var(--hairline)] bg-[var(--surface-soft)] px-4 py-4">
             <div className="max-w-3xl mx-auto">
@@ -588,8 +595,9 @@ export default function HomePage() {
                   onClick={sendStreamingMessage}
                   disabled={loading || !input.trim()}
                   className="btn-primary !p-3 rounded-[24px] flex-shrink-0 flex items-center justify-center transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+                  aria-label="发送"
                 >
-                  <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                   </svg>
                 </button>
@@ -601,7 +609,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 文档侧边栏 */}
         <DocumentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       </div>
     </div>

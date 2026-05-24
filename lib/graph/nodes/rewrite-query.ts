@@ -87,7 +87,8 @@ export async function rewriteQuery(input: RewriteQueryInput): Promise<string> {
           { role: 'system', content: REWRITE_SYSTEM_PROMPT },
           { role: 'user', content: userPrompt }
         ],
-        temperature: CHAT_CONFIG.temperature
+        temperature: CHAT_CONFIG.temperature,
+        max_tokens: 256
       }),
       signal: controller.signal
     });

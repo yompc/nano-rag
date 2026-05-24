@@ -109,7 +109,8 @@ async function performQualityCheck(
           { role: 'system', content: QUALITY_CHECK_SYSTEM_PROMPT },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.1 // 使用更低温度确保输出稳定
+        temperature: 0.1,
+        max_tokens: CHAT_CONFIG.maxTokens
       }),
       signal: controller.signal
     });

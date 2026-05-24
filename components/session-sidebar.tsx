@@ -9,6 +9,8 @@ interface SessionSidebarProps {
   onSelectSession: (id: string) => void;
   onNewSession: () => void;
   onDeleteSession: (id: string) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 function formatRelativeTime(timestamp: number): string {
@@ -107,6 +109,8 @@ export function SessionSidebar({
   onSelectSession,
   onNewSession,
   onDeleteSession,
+  isOpen = true,
+  onClose,
 }: SessionSidebarProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -114,9 +118,25 @@ export function SessionSidebar({
     setMounted(true);
   }, []);
 
+  const handleSelectSession = (id: string) => {
+    onSelectSession(id);
+    if (onClose && window.innerWidth < 768) {
+      onClose();
+    }
+  };
+
+  const handleNewSession = () => {
+    onNewSession();
+    if (onClose && window.innerWidth < 768) {
+      onClose();
+    }
+  };
+
+  const shouldShow = mounted && (isOpen || !onClose);
+
   if (!mounted) {
     return (
-      <div className="flex flex-col h-full w-full md:w-56 lg:w-64 bg-[var(--canvas)] border-r border-[var(--hairline)]">
+      <div className="hidden md:flex flex-col h-full w-full md:w-56 lg:w-64 bg-[var(--canvas)] border-r border-[var(--hairline)]">
         <div className="flex items-center justify-between p-4 border-b border-[var(--hairline)]">
           <h2 className="text-lg font-semibold text-[var(--body-strong)]">
             历史对话
@@ -153,20 +173,30 @@ export function SessionSidebar({
     );
   }
 
-  return (
-    <div className="flex flex-col h-full w-full md:w-56 lg:w-64 bg-[var(--canvas)] border-r border-[var(--hairline)]">
-      {/* 头部 */}
+  const sidebarContent = (
+    <>
       <div className="flex items-center justify-between p-4 border-b border-[var(--hairline)]">
         <h2 className="text-lg font-semibold text-[var(--body-strong)]">
           历史对话
         </h2>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="md:hidden p-2 text-[var(--muted-soft)] hover:text-[var(--primary)] transition-colors rounded-full hover:bg-[var(--surface-soft)]"
+            aria-label="关闭"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
 
-      {/* 新建会话按钮 */}
       <div className="p-3 border-b border-[var(--hairline)]">
         <button
           type="button"
-          onClick={onNewSession}
+          onClick={handleNewSession}
           className="btn-primary flex items-center justify-center gap-2 w-full"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -176,7 +206,6 @@ export function SessionSidebar({
         </button>
       </div>
 
-      {/* 会话列表 */}
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         {sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center px-4">
@@ -199,7 +228,7 @@ export function SessionSidebar({
                 key={session.id}
                 session={session}
                 isSelected={currentSessionId === session.id}
-                onSelect={() => onSelectSession(session.id)}
+                onSelect={() => handleSelectSession(session.id)}
                 onDelete={() => onDeleteSession(session.id)}
               />
             ))}
@@ -207,7 +236,6 @@ export function SessionSidebar({
         )}
       </div>
 
-      {/* 底部统计 */}
       {sessions.length > 0 && (
         <div className="p-3 border-t border-[var(--hairline)] text-center">
           <p className="text-xs text-[var(--muted-soft)]">
@@ -215,6 +243,29 @@ export function SessionSidebar({
           </p>
         </div>
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {onClose && shouldShow && (
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 md:hidden cursor-default"
+            aria-label="关闭侧边栏"
+          />
+          
+          <div className="fixed left-0 top-0 h-full w-full sm:w-80 z-50 bg-[var(--canvas)] border-r border-[var(--hairline)] shadow-xl flex flex-col animate-slide-in-left md:hidden">
+            {sidebarContent}
+          </div>
+        </>
+      )}
+
+      <div className="hidden md:flex flex-col h-full w-full md:w-56 lg:w-64 bg-[var(--canvas)] border-r border-[var(--hairline)]">
+        {sidebarContent}
+      </div>
+    </>
   );
 }

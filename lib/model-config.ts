@@ -28,6 +28,13 @@ export const CHAT_CONFIG = {
 
   // 超时时间（毫秒）
   timeout: parseInt(getEnvVar('CHAT_TIMEOUT', '30000'), 10),
+
+  // 上下文窗口大小 (Mistral Small 3.1 = 128k)
+  contextWindow: parseInt(getEnvVar('CHAT_CONTEXT_WINDOW', '128000'), 10),
+
+  // 最大输出 token 数 (上下文窗口的 90% 用于安全边界，但实际输出通常更小)
+  // 对于 RAG 问答，输出通常在 2k-4k 范围
+  maxTokens: parseInt(getEnvVar('CHAT_MAX_TOKENS', '4096'), 10),
 };
 
 /**

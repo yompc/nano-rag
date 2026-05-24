@@ -155,7 +155,8 @@ ${answer}
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.1
+        temperature: 0.1,
+        max_tokens: 100
       }),
       signal: controller.signal
     });
