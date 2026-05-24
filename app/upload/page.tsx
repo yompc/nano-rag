@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { PDFParser, type ParsedPDF } from '@/components/pdf-parser';
 import { createDocument, ingestPage } from '@/app/actions/ingest';
@@ -13,21 +13,6 @@ const DOC_TYPE_OPTIONS = [
   { value: 'faq', label: 'FAQ', icon: '❓' },
   { value: 'api_doc', label: 'API文档', icon: '🔧' },
 ] as const;
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-};
 
 export default function UploadPage() {
   const [parsedPDF, setParsedPDF] = useState<ParsedPDF | null>(null);
@@ -219,47 +204,41 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] dark:bg-black transition-colors duration-300">
-      <motion.div
-        className="max-w-4xl mx-auto px-6 py-12"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <motion.div variants={itemVariants} className="mb-8">
+    <div className="min-h-screen bg-[var(--canvas)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
             <Link
               href="/"
-              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="flex items-center gap-2 text-[var(--primary)] hover:opacity-80 transition-opacity"
               aria-label="返回首页"
             >
-              <svg className="w-5 h-5 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <title>返回</title>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
+              <span>返回</span>
             </Link>
           </div>
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-display text-[var(--ink)] mb-2">
               文档上传
             </h1>
-            <p className="text-zinc-600 dark:text-zinc-400">
+            <p className="text-sm md:text-base text-[var(--body)]">
               上传PDF文档到知识库，支持智能解析与分类
             </p>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          variants={itemVariants}
-          className="bg-white/80 dark:bg-zinc-900/50 backdrop-blur-xl rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-black/50 p-8 border border-zinc-200/50 dark:border-zinc-800/50"
-        >
+        <div className="bg-[var(--surface-card)] rounded-xl border border-[var(--hairline)] p-4 md:p-6 lg:p-8 w-full md:max-w-2xl lg:max-w-3xl mx-auto">
           <AnimatePresence>
             {error && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-2xl"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl"
               >
                 <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
               </motion.div>
@@ -269,10 +248,11 @@ export default function UploadPage() {
           <AnimatePresence>
             {success && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="mb-6 p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-2xl"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="mb-6 p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl"
               >
                 <p className="text-green-700 dark:text-green-300 text-sm flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -288,10 +268,11 @@ export default function UploadPage() {
           <AnimatePresence>
             {failedPage !== null && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-2xl"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-xl"
               >
                 <p className="text-yellow-700 dark:text-yellow-300 text-sm mb-3">
                   第{failedPage + 1}页处理失败，是否重试？
@@ -301,7 +282,7 @@ export default function UploadPage() {
                     type="button"
                     onClick={handleRetry}
                     disabled={isRetrying}
-                    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm disabled:opacity-50"
+                    className="btn-primary px-4 py-2 text-sm disabled:opacity-50 transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
                   >
                     {isRetrying ? '重试中...' : '重试本页'}
                   </button>
@@ -309,7 +290,7 @@ export default function UploadPage() {
                     type="button"
                     onClick={handleSkip}
                     disabled={isRetrying}
-                    className="px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50"
+                    className="px-4 py-2 border border-[var(--hairline)] text-[var(--body-strong)] rounded-lg text-sm hover:bg-[var(--canvas)] disabled:opacity-50 transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
                   >
                     跳过继续
                   </button>
@@ -318,8 +299,8 @@ export default function UploadPage() {
             )}
           </AnimatePresence>
 
-          <motion.div variants={itemVariants} className="mb-8">
-            <p className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
+          <div className="mb-8">
+            <p className="block text-sm text-[var(--body-strong)] mb-3">
               PDF文件
             </p>
             <PDFParser
@@ -327,62 +308,61 @@ export default function UploadPage() {
               onError={handleError}
               className=""
             />
-          </motion.div>
+          </div>
 
           <AnimatePresence>
             {parsedPDF && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
               >
                 <div className="mb-8">
-                  <p className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
+                  <p className="block text-sm text-[var(--body-strong)] mb-3">
                     文档类型
                   </p>
-                  <div className="grid grid-cols-3 gap-4" role="radiogroup" aria-label="选择文档类型">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4" role="radiogroup" aria-label="选择文档类型">
                     {DOC_TYPE_OPTIONS.map((option) => (
-                      <motion.button
+                      <button
                         key={option.value}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
                         onClick={() => setDocType(option.value)}
                         disabled={isUploading}
                         role="radio"
                         aria-checked={docType === option.value}
+                        type="button"
                         className={`
-                          p-4 rounded-2xl border-2 transition-all duration-200
+                          p-4 rounded-xl border border-[var(--hairline)] transition-all duration-150
                           ${docType === option.value
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-lg shadow-blue-500/20'
-                            : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
+                            ? 'bg-[var(--surface-card)] shadow-md'
+                            : 'bg-[var(--canvas)] hover:opacity-80'
                           }
-                          ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                          ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]'}
                         `}
                       >
                         <div className="text-3xl mb-2" aria-hidden="true">{option.icon}</div>
-                        <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        <div className="text-sm text-[var(--body-strong)]">
                           {option.label}
                         </div>
-                      </motion.button>
+                      </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="mb-8 p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl">
-                  <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-4">
+                <div className="mb-8 p-6 bg-[var(--canvas)] rounded-xl border border-[var(--hairline)]">
+                  <h3 className="text-sm text-[var(--body-strong)] mb-4">
                     文档信息
                   </h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-zinc-600 dark:text-zinc-400">文件名</span>
-                      <span className="text-zinc-900 dark:text-white font-medium">
+                      <span className="text-[var(--body)]">文件名</span>
+                      <span className="text-[var(--ink)] font-medium">
                         {parsedPDF.filename}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-zinc-600 dark:text-zinc-400">页数</span>
-                      <span className="text-zinc-900 dark:text-white font-medium">
+                      <span className="text-[var(--body)]">页数</span>
+                      <span className="text-[var(--ink)] font-medium">
                         {parsedPDF.totalPages} 页
                       </span>
                     </div>
@@ -392,19 +372,19 @@ export default function UploadPage() {
                 <AnimatePresence>
                   {isUploading && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
                       className="mb-6"
                     >
-                      <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${uploadProgress}%` }}
-                          className="h-full bg-gradient-to-r from-blue-500 to-blue-600"
+                      <div className="h-2 bg-[var(--canvas)] rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-[var(--primary)] transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2 text-center">
+                      <p className="text-sm text-[var(--body)] mt-2 text-center">
                         {currentPage > 0 
                           ? `正在处理第${currentPage}页，共${parsedPDF?.pages.length}页... ${uploadProgress}%`
                           : `正在上传... ${uploadProgress}%`
@@ -414,53 +394,40 @@ export default function UploadPage() {
                   )}
                 </AnimatePresence>
 
-                <div className="flex gap-4">
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+                  <button
                     onClick={handleReset}
                     disabled={isUploading}
                     type="button"
                     className={`
-                      flex-1 py-4 px-6 rounded-2xl font-medium
-                      border-2 border-zinc-200 dark:border-zinc-700
-                      text-zinc-700 dark:text-zinc-300
-                      hover:bg-zinc-50 dark:hover:bg-zinc-800
-                      transition-all duration-200
-                      ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
+                      flex-1 py-4 px-6 rounded-xl font-medium
+                      border border-[var(--hairline)]
+                      text-[var(--body-strong)]
+                      hover:bg-[var(--canvas)]
+                      transition-all duration-150
+                      ${isUploading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}
                     `}
                   >
                     取消
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                  </button>
+                  <button
                     onClick={handleUpload}
                     disabled={isUploading}
                     type="button"
-                    className={`
-                      flex-1 py-4 px-6 rounded-2xl font-medium
-                      bg-blue-500 hover:bg-blue-600 text-white
-                      shadow-lg shadow-blue-500/30
-                      transition-all duration-200
-                      ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
-                    `}
+                    className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
                   >
                     {isUploading ? '上传中...' : '确认上传'}
-                  </motion.button>
+                  </button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
+        </div>
 
-        <motion.div
-          variants={itemVariants}
-          className="mt-8 text-center"
-        >
-          <p className="text-sm text-zinc-400 dark:text-zinc-500">支持PDF格式，最大100页</p>
-        </motion.div>
-      </motion.div>
+        <div className="mt-8 text-center">
+          <p className="text-sm text-[var(--body)]">支持PDF格式，最大100页</p>
+        </div>
+      </div>
     </div>
   );
 }

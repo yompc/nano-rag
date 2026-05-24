@@ -125,13 +125,13 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
         tabIndex={0}
         aria-label="上传PDF文件"
         className={`
-          relative border-2 border-dashed rounded-xl p-12
+          relative bg-[var(--surface-card)] rounded-lg border-2 border-dashed border-[var(--hairline)] p-12
           transition-all duration-200 cursor-pointer
           flex flex-col items-center justify-center gap-4
           min-h-[200px]
-          ${isDragging 
-            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' 
-            : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600'
+          ${isDragging
+            ? 'bg-[var(--surface-card)] border-[var(--primary)]'
+            : 'border-[var(--hairline)] hover:border-[var(--ink)]'
           }
           ${parsing ? 'pointer-events-none opacity-60' : ''}
         `}
@@ -144,7 +144,7 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
           className="hidden"
         />
         
-        <div className="text-zinc-400 dark:text-zinc-500">
+        <div className="text-[var(--muted)]">
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
             className="w-16 h-16" 
@@ -164,23 +164,23 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
         </div>
         
         <div className="text-center">
-          <p className="text-lg font-medium text-zinc-700 dark:text-zinc-300">
+          <p className="text-lg font-medium text-[var(--ink)]">
             拖拽PDF文件到此处
           </p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-[var(--muted)] mt-1">
             或点击选择文件
           </p>
         </div>
 
         {parsing && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-black/80 rounded-xl">
-            <div className="w-48 h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-blue-500 transition-all duration-300"
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--surface-card)]/80 rounded-xl">
+            <div className="w-48 h-2 bg-[var(--canvas)] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[var(--primary)] transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <p className="mt-3 text-sm font-medium text-[var(--ink)]">
               正在解析... {progress}%
             </p>
           </div>
@@ -192,7 +192,7 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
           <button
             type="button"
             onClick={() => setShowPreview(!showPreview)}
-            className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+            className="flex items-center gap-2 text-sm font-medium text-[var(--ink)] hover:text-[var(--primary)] transition-colors"
           >
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
@@ -211,14 +211,14 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
           {showPreview && (
             <div className="mt-4 space-y-4 max-h-[400px] overflow-y-auto">
               {previewPages.map((page) => (
-                <div 
+                <div
                   key={page.pageNumber}
-                  className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4"
+                  className="bg-[var(--canvas)] border border-[var(--hairline)] rounded-lg p-4"
                 >
-                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+                  <p className="text-xs font-medium text-[var(--muted)] mb-2">
                     第 {page.pageNumber} 页
                   </p>
-                  <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-sm text-[var(--ink)] leading-relaxed whitespace-pre-wrap">
                     {page.text || '(此页无可提取文本)'}
                   </p>
                 </div>

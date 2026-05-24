@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 
 export interface SourceWithSimilarity {
   filename: string;
@@ -30,9 +30,9 @@ interface ThinkingProcessProps {
 }
 
 function getSimilarityColor(similarity: number): string {
-  if (similarity >= 0.8) return '#10b981';
-  if (similarity >= 0.6) return '#f59e0b';
-  return '#9ca3af';
+  if (similarity >= 0.8) return 'var(--success)';
+  if (similarity >= 0.6) return 'var(--warning)';
+  return 'var(--muted)';
 }
 
 function StepIcon({ status }: { status: ThinkingStep['status'] }) {
@@ -42,8 +42,7 @@ function StepIcon({ status }: { status: ThinkingStep['status'] }) {
         <motion.svg
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="w-3.5 h-3.5"
-          style={{ color: '#10b981' }}
+          className="w-3.5 h-3.5 text-[var(--success)]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -56,8 +55,7 @@ function StepIcon({ status }: { status: ThinkingStep['status'] }) {
         <motion.svg
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          className="w-3.5 h-3.5"
-          style={{ color: 'var(--primary)' }}
+          className="w-3.5 h-3.5 text-[var(--primary)]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -67,14 +65,14 @@ function StepIcon({ status }: { status: ThinkingStep['status'] }) {
       );
     case 'error':
       return (
-        <svg className="w-3.5 h-3.5" style={{ color: '#ef4444' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-label="错误">
+        <svg className="w-3.5 h-3.5 text-[var(--error)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-label="错误">
           <title>错误</title>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       );
     default:
       return (
-        <div className="w-3.5 h-3.5 rounded-full border-2" style={{ borderColor: 'var(--muted)' }} />
+        <div className="w-3.5 h-3.5 rounded-full border-2 border-[var(--muted)]" />
       );
   }
 }
@@ -87,8 +85,7 @@ function DocumentPreview({ source, index }: { source: SourceWithSimilarity; inde
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="flex items-center gap-1.5 py-1 px-1.5 rounded text-[10px]"
-      style={{ backgroundColor: 'var(--background)' }}
+      className="flex items-center gap-1.5 py-1 px-1.5 rounded-md text-[10px] bg-[var(--surface-card)]"
     >
       <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-label="文档">
         <title>文档</title>
@@ -122,8 +119,8 @@ function StepItem({ step, isExpanded }: { step: ThinkingStep; isExpanded: boolea
       <div className="flex items-center gap-1.5">
         <StepIcon status={step.status} />
         <span 
-          className="font-medium text-xs"
-          style={{ color: step.status === 'error' ? '#ef4444' : 'var(--foreground)' }}
+          className={`font-medium text-xs ${step.status === 'error' ? 'text-[var(--error)]' : ''}`}
+          style={{ color: step.status === 'error' ? undefined : 'var(--foreground)' }}
         >
           {step.name}
         </span>
@@ -193,23 +190,29 @@ const ThinkingProcess = memo(function ThinkingProcess({
 }: ThinkingProcessProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
+  // 思考完成后自动折叠（延迟 800ms 让用户看到"完成"徽章）
+  useEffect(() => {
+    if (isComplete) {
+      const timer = setTimeout(() => {
+        setIsExpanded(false);
+      }, 800);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete]);
+
   if (steps.length === 0) return null;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-lg border overflow-hidden ${className}`}
-      style={{
-        backgroundColor: 'var(--glass-bg)',
-        borderColor: 'var(--border)',
-      }}
+      className={`rounded-lg border border-[var(--hairline)] overflow-hidden bg-[var(--surface-soft)] ${className}`}
     >
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-3 py-1.5 flex items-center justify-between transition-colors hover:opacity-80"
-        style={{ backgroundColor: 'var(--secondary)' }}
+        className="w-full px-3 py-1.5 flex items-center justify-between transition-colors hover:opacity-80 bg-[var(--canvas)]"
       >
         <div className="flex items-center gap-1.5">
           <span className="text-sm">🧠</span>
@@ -220,8 +223,7 @@ const ThinkingProcess = memo(function ThinkingProcess({
             <motion.span
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="text-[10px] px-1.5 py-0.5 rounded-full"
-              style={{ backgroundColor: '#10b981', color: 'white' }}
+              className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--success)] text-white"
             >
               完成
             </motion.span>
@@ -247,10 +249,9 @@ const ThinkingProcess = memo(function ThinkingProcess({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="px-3 overflow-hidden"
-            style={{ backgroundColor: 'var(--background)' }}
+            className="px-3 overflow-hidden bg-[var(--canvas)]"
           >
-            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+            <div className="divide-y divide-[var(--hairline)]">
               {steps.map((step) => (
                 <StepItem key={step.id} step={step} isExpanded={isExpanded} />
               ))}

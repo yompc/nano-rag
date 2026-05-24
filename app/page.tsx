@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { ChatMessage, type Message } from '@/components/chat-message';
 import { type ThinkingStep } from '@/components/thinking-process';
@@ -409,74 +409,57 @@ export default function HomePage() {
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="flex h-screen bg-[#F5F5F7] dark:bg-black">
-      {/* 左侧会话列表 */}
-      <SessionSidebar
-        sessions={sessions}
-        currentSessionId={currentSessionId}
-        onSelectSession={handleSelectSession}
-        onNewSession={handleNewSession}
-        onDeleteSession={handleDeleteSession}
-      />
+    <div className="flex h-screen bg-[var(--canvas)]">
+      <div className="hidden md:block">
+        <SessionSidebar
+          sessions={sessions}
+          currentSessionId={currentSessionId}
+          onSelectSession={handleSelectSession}
+          onNewSession={handleNewSession}
+          onDeleteSession={handleDeleteSession}
+        />
+      </div>
 
-      {/* 右侧主内容区 */}
-      <div className="flex-1 flex flex-col min-w-0" ref={containerRef}>
+      <div className="flex-1 flex flex-col min-w-0 md:ml-0" ref={containerRef}>
         {/* 顶部导航栏 */}
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between px-4 py-3 border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl"
-        >
+        <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--hairline)] bg-[var(--canvas)]">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#007AFF] dark:bg-[#0A84FF] flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-            </div>
-            <span className="font-semibold text-zinc-900 dark:text-white">Nano RAG</span>
+            <img src="/logo.svg" alt="Nano RAG" className="w-8 h-8" />
+            <span className="font-display font-semibold text-base md:text-lg text-[var(--ink)]">Nano RAG</span>
           </div>
           <div className="flex items-center gap-2">
             <Link
               href="/upload"
-              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-              aria-label="上传文档"
+              className="p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors"
             >
-              <svg className="w-5 h-5 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             </Link>
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors"
               aria-label="打开文档库"
             >
-              <svg className="w-5 h-5 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </button>
           </div>
-        </motion.header>
+        </header>
 
         {/* 主内容区 */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-[var(--canvas)]">
           <div className="max-w-3xl mx-auto">
             {!hasMessages ? (
               /* 空状态 - 居中大输入框 */
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-col items-center justify-center h-[calc(100vh-200px)] px-4"
-              >
-                <div className="w-16 h-16 rounded-2xl bg-[#007AFF] dark:bg-[#0A84FF] flex items-center justify-center mb-6 shadow-lg shadow-blue-500/20">
-                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white mb-2">
+              <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] px-4">
+                <img src="/logo.svg" alt="Nano RAG" className="w-16 h-16 mb-6" />
+                <h1 className="text-xl md:text-2xl font-semibold text-[var(--ink)] mb-2">
                   有什么可以帮你的？
                 </h1>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
+                <p className="text-sm text-[var(--muted-soft)] mb-8">
                   基于文档的智能问答系统
                 </p>
 
@@ -490,26 +473,24 @@ export default function HomePage() {
                       onKeyDown={handleKeyDown}
                       placeholder="输入你的问题..."
                       rows={3}
-                      className="w-full px-6 py-4 pr-14 rounded-3xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-[#007AFF] dark:focus:ring-[#0A84FF] focus:border-transparent shadow-lg transition-all"
+                      className="input-textarea w-full px-6 py-4 pr-14 rounded-3xl"
                     />
-                    <motion.button
+                    <button
                       type="button"
                       onClick={sendStreamingMessage}
                       disabled={loading || !input.trim()}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="absolute right-3 bottom-3 w-10 h-10 rounded-full bg-[#007AFF] dark:bg-[#0A84FF] text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
+                      className="btn-primary absolute right-3 bottom-3 w-10 h-10 !p-0 rounded-full flex items-center justify-center transition-transform duration-150 hover:scale-105 active:scale-95"
                     >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                       </svg>
-                    </motion.button>
+                    </button>
                   </div>
-                  <p className="text-xs text-center text-zinc-400 dark:text-zinc-500 mt-3">
+                  <p className="text-xs text-center text-[var(--muted-soft)] mt-3">
                     按 Enter 发送，Shift + Enter 换行
                   </p>
                 </div>
-              </motion.div>
+              </div>
             ) : (
               /* 有消息时的聊天界面 */
               <div className="px-4 py-6">
@@ -524,7 +505,7 @@ export default function HomePage() {
                     
                     return (
                       <div 
-                        key={message.id || `${index}-${crypto.randomUUID()}`}
+                        key={message.id || `message-${index}`}
                         style={{ minHeight: height || undefined }}
                       >
                         <ChatMessage
@@ -536,26 +517,16 @@ export default function HomePage() {
                   })}
 
                   {loading && displayMessages[displayMessages.length - 1]?.role === 'user' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="flex items-center gap-2 mt-4"
-                    >
+                    <div className="flex items-center gap-2 mt-4">
                       <div className="flex gap-1">
-                        {[0, 0.2, 0.4].map((delay) => (
-                          <motion.div
-                            key={delay}
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ duration: 0.6, repeat: Infinity, delay }}
-                            className="w-2 h-2 rounded-full bg-[#007AFF] dark:bg-[#0A84FF]"
-                          />
-                        ))}
+<div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse animation-delay-200" />
+                  <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse animation-delay-400" />
                       </div>
-                      <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                      <span className="text-sm text-[var(--muted-soft)]">
                         AI 正在思考...
                       </span>
-                    </motion.div>
+                    </div>
                   )}
                 </AnimatePresence>
 
@@ -567,11 +538,7 @@ export default function HomePage() {
 
         {/* 底部输入框 - 有消息时显示 */}
         {hasMessages && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="border-t border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl px-4 py-4"
-          >
+          <div className="border-t border-[var(--hairline)] bg-[var(--surface-soft)] px-4 py-4">
             <div className="max-w-3xl mx-auto">
               <div className="flex gap-3 items-center">
                 <div className="flex-1 relative">
@@ -582,27 +549,25 @@ export default function HomePage() {
                     onKeyDown={handleKeyDown}
                     placeholder={loading ? "AI 正在思考..." : "输入你的问题..."}
                     rows={1}
-                    className="w-full px-5 py-3 rounded-[24px] border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-[#007AFF] dark:focus:ring-[#0A84FF] focus:border-transparent transition-all"
+                    className="input-textarea w-full px-5 py-3 rounded-[24px]"
                   />
                 </div>
-                <motion.button
+                <button
                   type="button"
                   onClick={sendStreamingMessage}
                   disabled={loading || !input.trim()}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="px-5 py-3 rounded-[24px] bg-[#007AFF] dark:bg-[#0A84FF] text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex-shrink-0"
+                  className="btn-primary !p-3 rounded-[24px] flex-shrink-0 flex items-center justify-center transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                   </svg>
-                </motion.button>
+                </button>
               </div>
-              <p className="text-xs text-center text-zinc-400 dark:text-zinc-500 mt-2">
+              <p className="text-xs text-center text-[var(--muted-soft)] mt-2">
                 按 Enter 发送，Shift + Enter 换行
               </p>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* 文档侧边栏 */}
