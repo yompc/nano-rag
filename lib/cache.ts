@@ -4,7 +4,7 @@
  */
 
 const CACHE_NAMESPACE = 'https://nano-rag.internal/cache/';
-const DEFAULT_TTL = 3600; // 1 小时
+const DEFAULT_TTL = 86400; // 24 小时
 
 /**
  * 构建缓存键
@@ -91,4 +91,7 @@ export const CACHE_TYPES = {
  */
 export const CACHE_TTL = {
   DEFAULT: DEFAULT_TTL,
+  CHUNKS: 86400, // 文档切片
+  DOCS: 86400, // 文档元数据
+  KEYWORDS: 86400, // 关键词
 } as const;
