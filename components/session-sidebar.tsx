@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { LocalSession } from '@/lib/session-storage';
 
 interface SessionSidebarProps {
@@ -26,6 +27,70 @@ function formatRelativeTime(timestamp: number): string {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
+function useRelativeTime(timestamp: number): string {
+  const [relativeTime, setRelativeTime] = useState<string>('');
+
+  useEffect(() => {
+    setRelativeTime(formatRelativeTime(timestamp));
+    
+    const interval = setInterval(() => {
+      setRelativeTime(formatRelativeTime(timestamp));
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [timestamp]);
+
+  return relativeTime;
+}
+
+function SessionItem({
+  session,
+  isSelected,
+  onSelect,
+  onDelete,
+}: {
+  session: LocalSession;
+  isSelected: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+}) {
+  const relativeTime = useRelativeTime(session.updatedAt);
+
+  return (
+    <button
+      type="button"
+      className={`w-full text-left p-3 cursor-pointer transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 ${
+        isSelected ? 'bg-zinc-100 dark:bg-zinc-800' : ''
+      }`}
+      onClick={onSelect}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-white truncate">
+            {session.title}
+          </h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            {session.messages.length} 条消息 · {relativeTime}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="p-1 text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          aria-label="删除"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </div>
+    </button>
+  );
+}
+
 export function SessionSidebar({
   sessions,
   currentSessionId,
@@ -49,7 +114,7 @@ export function SessionSidebar({
           onClick={onNewSession}
           className="flex items-center justify-center gap-2 w-full py-2 rounded-xl bg-[#007AFF] dark:bg-[#0A84FF] text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           新建对话
@@ -61,7 +126,7 @@ export function SessionSidebar({
         {sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center px-4">
             <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-3">
-              <svg className="w-6 h-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-6 h-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
@@ -75,39 +140,13 @@ export function SessionSidebar({
         ) : (
           <div className="divide-y divide-zinc-200/50 dark:divide-zinc-800/50">
             {sessions.map((session) => (
-              <div
+              <SessionItem
                 key={session.id}
-                className={`p-3 cursor-pointer transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 ${
-                  currentSessionId === session.id
-                    ? 'bg-zinc-100 dark:bg-zinc-800'
-                    : ''
-                }`}
-                onClick={() => onSelectSession(session.id)}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-zinc-900 dark:text-white truncate">
-                      {session.title}
-                    </h3>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                      {session.messages.length} 条消息 · {formatRelativeTime(session.updatedAt)}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteSession(session.id);
-                    }}
-                    className="p-1 text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    aria-label="删除"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+                session={session}
+                isSelected={currentSessionId === session.id}
+                onSelect={() => onSelectSession(session.id)}
+                onDelete={() => onDeleteSession(session.id)}
+              />
             ))}
           </div>
         )}
