@@ -158,6 +158,11 @@ function parseQualityCheckResult(result: string): QualityCheckResult {
       jsonStr = jsonStr.slice(startIndex, endIndex + 1);
     }
 
+    // 修复JSON字符串中的控制字符问题
+    // 在字符串值内的未转义换行符会导致JSON解析失败
+    // 使用状态机方式处理，只转义字符串值内的控制字符
+    jsonStr = sanitizeJsonString(jsonStr);
+
     const parsed = JSON.parse(jsonStr);
 
     // 验证并规范化结果
@@ -189,6 +194,55 @@ function parseQualityCheckResult(result: string): QualityCheckResult {
       fixedAnswer: null
     };
   }
+}
+
+/**
+ * 清理JSON字符串中的控制字符
+ * 只处理字符串值内的未转义控制字符，不影响JSON结构
+ */
+function sanitizeJsonString(jsonStr: string): string {
+  let result = '';
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = 0; i < jsonStr.length; i++) {
+    const char = jsonStr[i];
+    const nextChar = jsonStr[i + 1];
+
+    if (escapeNext) {
+      result += char;
+      escapeNext = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      result += char;
+      escapeNext = true;
+      continue;
+    }
+
+    if (char === '"' && !escapeNext) {
+      inString = !inString;
+      result += char;
+      continue;
+    }
+
+    if (inString) {
+      if (char === '\n') {
+        result += '\\n';
+      } else if (char === '\r') {
+        result += '\\r';
+      } else if (char === '\t') {
+        result += '\\t';
+      } else {
+        result += char;
+      }
+    } else {
+      result += char;
+    }
+  }
+
+  return result;
 }
 
 /**
