@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://nano-rag.yomigi.com"><strong>在线体验 →</strong></a>
+  <a href="https://nano-rag.yomigi.com" target="_blank"><strong>在线体验 →</strong></a>
 </p>
 
 ---
@@ -125,49 +125,6 @@ npm run deploy
 ```
 
 详细部署指南请参阅 [DEPLOYMENT.md](./DEPLOYMENT.md)。
-
-## 架构设计
-
-### 目录结构
-
-```
-app/
-├── api/chat/          # 聊天 API（流式响应）
-├── actions/           # Server Actions
-├── chat/              # 聊天页面
-├── upload/            # 文档上传页面
-└── library/           # 文档库页面
-
-lib/
-├── graph/             # LangGraph RAG 管道
-│   ├── rag-graph.ts   # 图定义与执行
-│   ├── state.ts       # 状态类型
-│   └── nodes/         # 各处理节点
-├── db.ts              # D1 数据库操作
-├── embedding.ts       # Mistral Embedding
-├── retrieve.ts        # 向量相似度检索
-└── chunking.ts        # 文档分片
-```
-
-### 数据库 Schema
-
-| 表 | 用途 |
-|----|------|
-| `docs` | 文档元信息 |
-| `chunks` | 文档切片（含 embedding） |
-| `chat_sessions` | 会话管理 |
-| `chat_messages` | 消息记录 |
-| `checkpoints` | LangGraph 状态持久化 |
-
-### 关键配置
-
-| 参数 | 值 | 位置 |
-|------|-----|------|
-| Embedding 维度 | 1024 | `lib/model-config.ts` |
-| Chunk 大小 | 800-1000 字符 | `lib/chunking.ts` |
-| Top-K 检索 | 5 | `lib/retrieve.ts` |
-| 相似度阈值 | 0.5 | `lib/retrieve.ts` |
-| 最大重试次数 | 2 | `lib/graph/rag-graph.ts` |
 
 <p align="center">
   <sub>构建 with ❤️ using Next.js, Cloudflare Workers, and LangGraph</sub>

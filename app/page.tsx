@@ -44,6 +44,7 @@ export default function HomePage() {
   const [streamingContent, setStreamingContent] = useState('');
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(768);
+  const [showLibraryBubble, setShowLibraryBubble] = useState(false);
   const thinkingStepsRef = useRef<ThinkingStep[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -76,6 +77,21 @@ export default function HomePage() {
       setIsHydrated(true);
     }
   }, [isHydrated, currentMessages]);
+
+  // 文档库气泡提示 - 首次进入时显示10秒
+  useEffect(() => {
+    if (isHydrated) {
+      const hasSeenBubble = localStorage.getItem('hasSeenLibraryBubble');
+      if (!hasSeenBubble) {
+        setShowLibraryBubble(true);
+        const timer = setTimeout(() => {
+          setShowLibraryBubble(false);
+          localStorage.setItem('hasSeenLibraryBubble', 'true');
+        }, 10000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isHydrated]);
 
   // 消息变化时保存到 localStorage
   useEffect(() => {
@@ -448,12 +464,18 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors"
+              className="p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors relative"
               aria-label="打开文档库"
             >
               <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
+              {showLibraryBubble && (
+                <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[var(--ink)] text-white text-sm px-3 py-1.5 rounded-lg shadow-lg animate-bounce-in">
+                  文档库
+                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--ink)] rotate-45" />
+                </span>
+              )}
             </button>
           </div>
         </header>

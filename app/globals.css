@@ -486,3 +486,24 @@ body {
 .animate-slide-in-right {
   animation: slide-in-right 200ms ease-out;
 }
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.05);
+  }
+  70% {
+    transform: translateX(-50%) scale(0.9);
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 400ms ease-out;
+}
