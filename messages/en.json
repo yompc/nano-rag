@@ -149,6 +149,14 @@
     "retry": {
       "title": "Regenerating (attempt {n})",
       "reason": "Issue detected, regenerating"
+    },
+    "pdfPreview": {
+      "title": "Preview",
+      "pages": "Page {pages}",
+      "page": "Page {page}",
+      "characters": "characters",
+      "close": "Close",
+      "noContent": "No content found"
     }
   },
   "password": {

@@ -2,7 +2,7 @@
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database, Doc } from '@/lib/types';
-import { listDocs, deleteDoc, deleteChunksByDocId, getChunksByDocId, invalidateCache } from '@/lib/db';
+import { listDocs, deleteDoc, deleteChunksByDocId, getCachedChunksByDocIds, invalidateCache } from '@/lib/db';
 import { verifyAdminPassword } from '@/lib/auth/password';
 
 interface Env {
@@ -25,7 +25,7 @@ export interface DeleteDocResult {
 }
 
 /**
- * Get document list (including chunk count for each document)
+ * Get document list (including chunk count for each document) with caching
  */
 export async function listDocuments(): Promise<ListDocsResult> {
   try {
@@ -36,16 +36,18 @@ export async function listDocuments(): Promise<ListDocsResult> {
     }
 
     const docs = await listDocs(env.DB, 100);
+    const docIds = docs.map(d => d.id);
+    const chunks = await getCachedChunksByDocIds(env.DB, docIds);
     
-    const docsWithChunks = await Promise.all(
-      docs.map(async (doc) => {
-        const chunks = await getChunksByDocId(env.DB, doc.id);
-        return {
-          ...doc,
-          chunk_count: chunks.length,
-        };
-      })
-    );
+    const chunkCountMap = new Map<number, number>();
+    for (const chunk of chunks) {
+      chunkCountMap.set(chunk.doc_id, (chunkCountMap.get(chunk.doc_id) || 0) + 1);
+    }
+    
+    const docsWithChunks = docs.map(doc => ({
+      ...doc,
+      chunk_count: chunkCountMap.get(doc.id) || 0,
+    }));
 
     return {
       success: true,

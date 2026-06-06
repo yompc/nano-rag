@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { useTranslations, useLocale } from 'next-intl';
 import { ThinkingProcess, type ThinkingStep } from './thinking-process';
+import { PDFPreviewTooltip } from './pdf-preview-tooltip';
 
 /**
  * 检测消息是否为"无法回答"类型
@@ -123,6 +124,9 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: 
   const t = useTranslations('chat');
   const locale = useLocale();
   const [showSources, setShowSources] = useState(false);
+  const [hoveredSource, setHoveredSource] = useState<{ filename: string; page: number; content: string } | null>(null);
+  const [pinnedSource, setPinnedSource] = useState<{ filename: string; page: number; content: string } | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const isUser = message.role === 'user';
   const hasSources = message.sources && message.sources.length > 0;
   const hasThinking = message.thinkingSteps && message.thinkingSteps.length > 0;
@@ -280,7 +284,27 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: 
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="rounded-lg p-2.5 text-xs bg-[var(--surface-soft)] border border-[var(--hairline)] text-[var(--ink)]"
+                    onMouseEnter={(e) => {
+                      if (!pinnedSource) {
+                        setHoveredSource(source);
+                        setMousePos({ x: e.clientX, y: e.clientY });
+                      }
+                    }}
+                    onMouseMove={(e) => {
+                      if (!pinnedSource) {
+                        setMousePos({ x: e.clientX, y: e.clientY });
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      if (!pinnedSource) {
+                        setHoveredSource(null);
+                      }
+                    }}
+                    onClick={() => {
+                      setHoveredSource(null);
+                      setPinnedSource(source);
+                    }}
+                    className="relative rounded-lg p-2.5 text-xs bg-[var(--surface-soft)] border border-[var(--hairline)] text-[var(--ink)] cursor-pointer hover:bg-[var(--surface-card)] hover:border-[var(--primary)] transition-all"
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-[var(--primary)]">
@@ -300,6 +324,32 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: 
           </motion.div>
         )}
       </motion.div>
+
+      {/* Hover Preview Tooltip (only when not pinned) */}
+      {hoveredSource && !pinnedSource && (
+        <PDFPreviewTooltip
+          source={hoveredSource}
+          mouseX={mousePos.x}
+          mouseY={mousePos.y}
+        />
+      )}
+
+      {/* Pinned Preview Dialog (clicked, stays in place) */}
+      {pinnedSource && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+            onClick={() => setPinnedSource(null)}
+          />
+          <PDFPreviewTooltip
+            source={pinnedSource}
+            mouseX={0}
+            mouseY={0}
+            pin
+            onClose={() => setPinnedSource(null)}
+          />
+        </>
+      )}
     </motion.div>
   );
 }, (prevProps, nextProps) => {

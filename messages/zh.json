@@ -149,6 +149,14 @@
     "retry": {
       "title": "重新生成 (第{n}次)",
       "reason": "检测到问题，正在重新生成"
+    },
+    "pdfPreview": {
+      "title": "预览",
+      "pages": "第 {pages} 页",
+      "page": "第 {page} 页",
+      "characters": "字符",
+      "close": "关闭",
+      "noContent": "未找到相关内容"
     }
   },
   "password": {

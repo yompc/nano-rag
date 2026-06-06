@@ -264,13 +264,60 @@ export async function getCachedChunksByDocIds(db: D1Database, docIds: number[]):
 export async function invalidateCache(type: 'all' | 'chunks' | 'docs' | 'keywords'): Promise<void> {
   if (type === 'all' || type === 'chunks') {
     await deleteFromCache(buildCacheKey(CACHE_TYPES.CHUNKS, 'all'));
+    // Note: chunks/filename/* caches will expire by TTL
   }
   
   if (type === 'all' || type === 'docs') {
     await deleteFromCache(buildCacheKey(CACHE_TYPES.DOCS, 'all'));
+    // Note: docs/filename/* caches will expire by TTL
   }
   
   if (type === 'all') {
-    console.log('[Cache] Note: keywords/* and chunks/by-docs/* caches will expire by TTL');
+    console.log('[Cache] Note: keywords/*, chunks/by-docs/*, chunks/filename/*, docs/filename/* caches will expire by TTL');
   }
+}
+
+/**
+ * 通过文件名获取文档 ID
+ */
+export async function getDocByFilename(db: D1Database, filename: string): Promise<Doc | null> {
+  return await db
+    .prepare('SELECT * FROM docs WHERE filename = ?')
+    .bind(filename)
+    .first<Doc>();
+}
+
+/**
+ * 缓存版本：通过文件名获取文档 ID
+ */
+export async function getCachedDocByFilename(db: D1Database, filename: string): Promise<Doc | null> {
+  const cacheKey = buildCacheKey(CACHE_TYPES.DOCS, `filename/${filename}`);
+  
+  const cached = await getFromCache<Doc>(cacheKey);
+  if (cached) return cached;
+  
+  const data = await getDocByFilename(db, filename);
+  if (data) {
+    await setToCache(cacheKey, data);
+  }
+  return data;
+}
+
+/**
+ * 缓存版本：通过文件名获取所有 chunks
+ */
+export async function getCachedChunksByFilename(db: D1Database, filename: string): Promise<Chunk[]> {
+  const cacheKey = buildCacheKey(CACHE_TYPES.CHUNKS, `filename/${filename}`);
+  
+  const cached = await getFromCache<Chunk[]>(cacheKey);
+  if (cached) return cached;
+  
+  // First get the doc by filename
+  const doc = await getDocByFilename(db, filename);
+  if (!doc) return [];
+  
+  // Then get all chunks for this doc
+  const data = await getChunksByDocId(db, doc.id);
+  await setToCache(cacheKey, data);
+  return data;
 }

@@ -183,6 +183,7 @@ export default function HomePage() {
     setStreamingMessageId(assistantMessageId);
     setStreamingContent('');
     let streamingContent = '';
+    let collectedSources: { filename: string; page: number; content: string }[] = [];
 
     try {
       const historyMessages = messages.slice(-6).map((msg) => ({
@@ -264,6 +265,14 @@ export default function HomePage() {
                 }
 
                 case 'sources': {
+                  // Save sources for the final message
+                  // preview now contains the full chunk content
+                  collectedSources = data.sources.map((src: { filename: string; page: number; preview: string }) => ({
+                    filename: src.filename,
+                    page: src.page,
+                    content: src.preview,
+                  }));
+
                   setThinkingSteps((prev) => {
                     const newSteps = prev.map(s =>
                       s.id === 'retrieve'
@@ -362,6 +371,7 @@ export default function HomePage() {
                       id: assistantMessageId!,
                       role: 'assistant',
                       content: streamingContent,
+                      sources: collectedSources.length > 0 ? collectedSources : undefined,
                       timestamp: new Date(),
                       thinkingSteps: thinkingStepsRef.current,
                     },

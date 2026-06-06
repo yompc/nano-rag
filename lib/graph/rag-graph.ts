@@ -235,7 +235,7 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
         filename: chunk.filename,
         page: chunk.page,
         similarity: chunk.similarity,
-        preview: chunk.content.slice(0, 100)
+        preview: chunk.content
       }));
       controller.sendSources(finalSources);
     }
