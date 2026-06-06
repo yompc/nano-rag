@@ -137,6 +137,10 @@
       "deleteConfirm": "Delete \"{filename}\"?"
     }
   },
+  "errors": {
+    "NO_DOCUMENTS": "Sorry, no relevant documents found. Please ensure documents have been uploaded.",
+    "GENERATE_ERROR": "Error generating answer. Please try again later."
+  },
   "chat": {
     "sources": "Sources",
     "page": "Page {page}",
@@ -150,6 +154,7 @@
     },
     "thinking": {
       "title": "Thinking Process",
+      "processing": "Processing...",
       "found": "Found {count} documents",
       "original": "Original",
       "rewritten": "Rewritten",

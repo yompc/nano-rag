@@ -142,6 +142,7 @@ export async function runRAG(input: RunRAGInput): Promise<RunRAGResult> {
     rewritten_question: null,
     top_chunks: [],
     answer: null,
+    error: null,
     hallucination: null,
     retry_count: 0,
     messages,
@@ -180,6 +181,7 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
     rewritten_question: null,
     top_chunks: [],
     answer: null,
+    error: null,
     hallucination: null,
     retry_count: 0,
     messages,
@@ -263,6 +265,18 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
         }
       });
       state = { ...state, ...generateResult };
+      
+      // Check for error
+      if (state.error) {
+        controller.sendError(state.error, state.error);
+        return {
+          answer: '',
+          sources: [],
+          hallucination: null,
+          retryCount: 0
+        };
+      }
+      
       controller.sendStatus('generate', 'Answer generation complete', { duration: Date.now() - generateStart, retryCount: retryIteration });
       controller.sendThinking('generate', `Generated answer based on ${finalSources.length} document fragments`, {
         documents: finalSources.map(s => s.filename)

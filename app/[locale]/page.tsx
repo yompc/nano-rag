@@ -29,6 +29,7 @@ function convertLocalToMessage(messages: LocalMessage[]): Message[] {
 export default function HomePage() {
   const t = useTranslations('home');
   const tCommon = useTranslations('common');
+  const tErrors = useTranslations('errors');
   const {
     sessions,
     currentSessionId,
@@ -350,7 +351,9 @@ export default function HomePage() {
                 }
 
                 case 'error': {
-                  throw new Error(data.message);
+                  const errorCode = data.code || data.message;
+                  const errorMessage = tErrors.has(errorCode) ? tErrors(errorCode) : data.message;
+                  throw new Error(errorMessage);
                 }
 
                 case 'done': {

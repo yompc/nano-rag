@@ -58,7 +58,8 @@ export async function generateNode(
   
   if (top_chunks.length === 0) {
     return {
-      answer: 'Sorry, no relevant documents found. Please ensure documents have been uploaded.'
+      answer: '',
+      error: 'NO_DOCUMENTS'
     };
   }
   
@@ -68,7 +69,8 @@ export async function generateNode(
   } catch (error) {
     console.error('Failed to generate answer:', error);
     return {
-      answer: 'Error generating answer. Please try again later.'
+      answer: '',
+      error: 'GENERATE_ERROR'
     };
   }
 }
@@ -241,10 +243,9 @@ export async function generateStreamNode(
   const { question, top_chunks } = state;
 
   if (top_chunks.length === 0) {
-    const noDocAnswer = 'Sorry, no relevant documents found. Please ensure documents have been uploaded.';
-    onChunk(noDocAnswer);
     return {
-      answer: noDocAnswer
+      answer: '',
+      error: 'NO_DOCUMENTS'
     };
   }
 
@@ -255,7 +256,6 @@ export async function generateStreamNode(
     return { answer };
   } catch (error) {
     console.error('[Generate] Stream generation failed:', error);
-    const fallbackAnswer = 'Error generating answer. Please try again later.';
-    return { answer: fallbackAnswer };
+    return { answer: '', error: 'GENERATE_ERROR' };
   }
 }

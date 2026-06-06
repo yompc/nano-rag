@@ -12,10 +12,12 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, variant = 'default', navChildren, hideMobileMenu = false }: AppShellProps) {
+  const isLanding = variant === 'landing';
+  
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--canvas)]">
+    <div className={`${isLanding ? 'min-h-screen' : 'h-screen overflow-hidden'} flex flex-col bg-[var(--canvas)]`}>
       <NavBar variant={variant} hideMobileMenu={hideMobileMenu}>{navChildren}</NavBar>
-      <main className="flex-1 flex flex-col min-h-0">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {children}
       </main>
     </div>

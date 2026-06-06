@@ -46,6 +46,11 @@ export const RAGStateAnnotation = Annotation.Root({
     value: (left, right) => right ?? left ?? null
   }),
   
+  error: Annotation<string | null>({
+    default: () => null,
+    value: (left, right) => right ?? left ?? null
+  }),
+  
   hallucination: Annotation<boolean | null>({
     default: () => null,
     value: (left, right) => right ?? left ?? null
@@ -77,14 +82,12 @@ export const RAGStateAnnotation = Annotation.Root({
   })
 });
 
-/**
- * RAG State type (inferred from Annotation)
- */
 export type RAGState = {
   question: string;
   rewritten_question: string | null;
   top_chunks: RetrievedChunk[];
   answer: string | null;
+  error: string | null;
   hallucination: boolean | null;
   retry_count: number;
   messages: Message[];
