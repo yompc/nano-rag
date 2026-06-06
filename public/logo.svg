@@ -1,27 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
-  <!-- 使用滤镜实现极其细腻的学术感阴影 -->
-  <defs>
-    <filter id="soft-shadow" x="-10%" y="-10%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#39342E" flood-opacity="0.06" />
-    </filter>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#ffffff"/>
 
-  <!-- 纯白略带一丝丝暖意的卡片背景，带微阴影 -->
-  <rect x="16" y="16" width="224" height="224" rx="56" fill="#FFFFFF" filter="url(#soft-shadow)"/>
-  
-  <g transform="translate(56, 56)">
-    <!-- 几何编织的 N 型（Nano）与 RAG 检索流 -->
-    <path d="M 20,110 V 30 L 72,90 L 124,30 V 110" fill="none" stroke="#191816" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-    
-    <!-- 穿梭在 N 结构之中的 RAG 数据流线 -->
-    <path d="M 16,30 Q 72,0 128,30" fill="none" stroke="#7A7265" stroke-width="3" stroke-dasharray="2 6" stroke-linecap="round"/>
-    
-    <!-- 核心珊瑚橙色纳米节点 -->
-    <circle cx="72" cy="90" r="9" fill="#D96B43"/>
-    <circle cx="20" cy="30" r="5" fill="#191816"/>
-    <circle cx="124" cy="30" r="5" fill="#191816"/>
-    
-    <!-- 智慧星芒 -->
-    <path d="M 72,30 L 74,36 L 80,38 L 74,40 L 72,46 L 70,40 L 64,38 L 70,36 Z" fill="#E0B865"/>
+  <!-- chip pins -->
+  <g fill="#000000">
+    <!-- top -->
+    <rect x="380" y="120" width="28" height="90" rx="8"/>
+    <rect x="470" y="120" width="28" height="90" rx="8"/>
+    <rect x="560" y="120" width="28" height="90" rx="8"/>
+    <rect x="650" y="120" width="28" height="90" rx="8"/>
+
+    <!-- bottom -->
+    <rect x="380" y="814" width="28" height="90" rx="8"/>
+    <rect x="470" y="814" width="28" height="90" rx="8"/>
+    <rect x="560" y="814" width="28" height="90" rx="8"/>
+    <rect x="650" y="814" width="28" height="90" rx="8"/>
+
+    <!-- left -->
+    <rect x="120" y="380" width="90" height="28" rx="8"/>
+    <rect x="120" y="470" width="90" height="28" rx="8"/>
+    <rect x="120" y="560" width="90" height="28" rx="8"/>
+    <rect x="120" y="650" width="90" height="28" rx="8"/>
+
+    <!-- right -->
+    <rect x="814" y="380" width="90" height="28" rx="8"/>
+    <rect x="814" y="470" width="90" height="28" rx="8"/>
+    <rect x="814" y="560" width="90" height="28" rx="8"/>
+    <rect x="814" y="650" width="90" height="28" rx="8"/>
   </g>
+
+  <!-- chip body -->
+  <rect x="240" y="240" width="544" height="544" rx="90" fill="#000000"/>
+
+  <!-- inner border -->
+  <rect x="320" y="320" width="384" height="384" rx="50"
+        fill="none" stroke="#ffffff" stroke-width="12"/>
+
+  <!-- N -->
+  <text x="512" y="610"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="240"
+        font-weight="700"
+        text-anchor="middle"
+        fill="#ffffff">N</text>
 </svg>

@@ -224,5 +224,18 @@
     "pages": "页",
     "page": "第",
     "noText": "(此页无可提取文本)"
+  },
+  "notFound": {
+    "title": "页面未找到",
+    "description": "您访问的页面不存在或已被移除",
+    "backHome": "返回首页",
+    "goToChat": "开始对话",
+    "goToLibrary": "文档库"
+  },
+  "error": {
+    "title": "服务器错误",
+    "description": "抱歉，服务器遇到了问题",
+    "retry": "重试",
+    "backHome": "返回首页"
   }
 }
