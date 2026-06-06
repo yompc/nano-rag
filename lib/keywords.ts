@@ -1,6 +1,6 @@
 /**
- * 关键词提取模块
- * 使用 LLM 提取3-5个关键词
+ * Keyword Extraction Module
+ * Use LLM to extract 3-5 keywords
  */
 
 import { CHAT_CONFIG } from './model-config';
@@ -23,13 +23,13 @@ Text:
 `;
 
 /**
- * 从文本中提取关键词
- * @param text - 要提取关键词的文本
- * @param apiKey - Mistral API密钥
- * @returns 关键词数组（3-5个）
+ * Extract keywords from text
+ * @param text - Text to extract keywords from
+ * @param apiKey - OpenAI API key
+ * @returns Keyword array (3-5 keywords)
  */
 export async function extractKeywords(text: string, apiKey: string): Promise<string[]> {
-  // 如果文本太长，截取前2000字符
+  // If text is too long, truncate to first 2000 characters
   const truncatedText = text.length > 2000 ? text.slice(0, 2000) : text;
 
   const maxRetries = 2;
@@ -62,64 +62,64 @@ export async function extractKeywords(text: string, apiKey: string): Promise<str
       
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Mistral Chat API ${response.status}: ${errorText}`);
+        throw new Error(`OpenAI Chat API ${response.status}: ${errorText}`);
       }
       
       const data = await response.json() as KeywordExtractionResponse;
       
       if (!data.choices || data.choices.length === 0) {
-        throw new Error('No response from Mistral Chat API');
+        throw new Error('No response from OpenAI Chat API');
       }
       
       const content = data.choices[0].message.content.trim();
-      
-      // 尝试解析JSON数组
+
+      // Try to parse JSON array
       try {
         const keywords = JSON.parse(content);
-        
+
         if (!Array.isArray(keywords)) {
           throw new Error('Response is not an array');
         }
-        
-        // 验证关键词格式并限制数量
+
+        // Validate keyword format and limit count
         return keywords
           .filter((k): k is string => typeof k === 'string')
           .map(k => k.trim())
           .filter(k => k.length > 0)
           .slice(0, 5);
       } catch {
-        // JSON解析失败，尝试从文本中提取关键词
+        // JSON parse failed, try to extract keywords from text
         return extractKeywordsFromText(content);
       }
     } catch (error) {
       if (attempt === maxRetries - 1) {
-        // 最后一次重试失败，返回空数组而不是抛出错误
+        // Last retry failed, return empty array instead of throwing error
         console.error('Keyword extraction failed:', error);
         return [];
       }
-      
-      // 简单退避
+
+      // Simple backoff
       const delay = 1000 * (attempt + 1);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  
+
   return [];
 }
 
 /**
- * 从文本内容中提取关键词（备用方案）
+ * Extract keywords from text content (fallback)
  */
 function extractKeywordsFromText(content: string): string[] {
-  // 匹配引号中的内容或逗号分隔的词
+  // Match content in quotes or comma-separated words
   const patterns = [
     /"([^"]+)"/g,
     /'([^']+)'/g,
     /「([^」]+)」/g
   ];
-  
+
   const keywords: string[] = [];
-  
+
   for (const pattern of patterns) {
     const matches = content.matchAll(pattern);
     for (const match of matches) {
@@ -129,8 +129,8 @@ function extractKeywordsFromText(content: string): string[] {
       }
     }
   }
-  
-  // 如果没有找到引号内容，尝试按逗号分割
+
+  // If no quoted content found, try splitting by comma
   if (keywords.length === 0) {
     const parts = content.split(/[,，、\n]/);
     keywords.push(...parts

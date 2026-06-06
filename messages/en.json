@@ -1,0 +1,170 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred, please try again",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "close": "Close",
+    "back": "Back",
+    "submit": "Send",
+    "retry": "Retry",
+    "skip": "Skip"
+  },
+  "nav": {
+    "learnMore": "Learn More",
+    "uploadDoc": "Upload Document",
+    "docLibrary": "Document Library",
+    "history": "Chat History",
+    "newChat": "New Chat"
+  },
+  "home": {
+    "title": "How can I help you?",
+    "subtitle": "Document-based intelligent Q&A system",
+    "placeholder": "Enter your question...",
+    "sendHint": "Press Enter to send, Shift + Enter for new line",
+    "thinking": "AI is thinking...",
+    "openHistory": "Open history",
+    "openDocLibrary": "Open document library"
+  },
+  "landing": {
+    "hero": {
+      "title": "Nano-RAG - Lightweight Edge RAG Framework",
+      "subtitle": "Build AI knowledge base apps in 5 minutes with Next.js + Cloudflare Workers",
+      "startButton": "Get Started",
+      "sourceButton": "View Source"
+    },
+    "features": {
+      "title": "Core Features",
+      "edge": {
+        "title": "Edge Deployment",
+        "desc": "Powered by Cloudflare Workers, global low latency, millisecond response"
+      },
+      "intelligence": {
+        "title": "Intelligent Retrieval",
+        "desc": "LangGraph orchestrated multi-stage RAG pipeline, precise context matching"
+      },
+      "storage": {
+        "title": "Serverless Storage",
+        "desc": "D1 database + vector search, no extra services, zero ops cost"
+      },
+      "quality": {
+        "title": "Quality Assurance",
+        "desc": "Built-in hallucination detection, quality checks and auto-repair for reliable answers"
+      }
+    },
+    "quickStart": {
+      "title": "Quick Start",
+      "step1": "Clone the project",
+      "step2": "Install dependencies",
+      "step3": "Configure environment",
+      "step4": "Initialize database and start"
+    },
+    "techStack": {
+      "title": "Tech Stack",
+      "nextjs": "Frontend Framework",
+      "workers": "Edge Runtime",
+      "d1": "SQLite Storage",
+      "langgraph": "AI Orchestration",
+      "openai": "LLM & Embedding"
+    },
+    "cta": {
+      "title": "Start Building Your AI Knowledge Base",
+      "subtitle": "Upload documents, ask questions, get precise answers from AI",
+      "button": "Try Now"
+    },
+    "footer": {
+      "copyright": "© 2025 Nano-RAG. Built with Next.js + Cloudflare Workers"
+    }
+  },
+  "upload": {
+    "title": "Document Upload",
+    "subtitle": "Upload PDF documents to knowledge base, supports intelligent parsing and classification",
+    "pdfFile": "PDF File",
+    "docType": "Document Type",
+    "docInfo": "Document Info",
+    "filename": "Filename",
+    "pages": "Pages",
+    "processing": "Processing page {current} of {total}...",
+    "uploading": "Uploading...",
+    "confirmUpload": "Confirm Upload",
+    "uploadSuccess": "Document uploaded successfully!",
+    "pageFailed": "Page {page} processing failed, retry?",
+    "retryPage": "Retry Page",
+    "skipContinue": "Skip & Continue",
+    "legalNotice": "Password verification required for document upload per regulations"
+  },
+  "docTypes": {
+    "manual": "Manual",
+    "faq": "FAQ",
+    "api_doc": "API Doc"
+  },
+  "steps": {
+    "relevance_check": "Analyzing",
+    "rewrite": "Rewriting",
+    "document_selector": "Selecting",
+    "retrieve": "Retrieving",
+    "generate": "Generating",
+    "check": "Verifying",
+    "quality_check": "Quality Check",
+    "complete": "Complete"
+  },
+  "sidebar": {
+    "history": {
+      "title": "Chat History",
+      "newChat": "New Chat",
+      "empty": "No chat history",
+      "emptyHint": "Start a new chat, history will be saved here",
+      "messageCount": "{count} messages",
+      "totalChats": "{count} chats total"
+    },
+    "documents": {
+      "title": "Document Library",
+      "upload": "Upload Document",
+      "empty": "No documents",
+      "emptyHint": "Upload PDF documents to start asking questions",
+      "chunks": "{count} chunks",
+      "totalDocs": "{docs} documents, {chunks} chunks total",
+      "deleteConfirm": "Delete \"{filename}\"?"
+    }
+  },
+  "chat": {
+    "sources": "Sources",
+    "page": "Page {page}",
+    "notFound": {
+      "title": "No Relevant Documents Found",
+      "subtitle": "No matching content in current document library",
+      "suggestion": "Suggestions",
+      "tip1": "Upload relevant documents to the library",
+      "tip2": "Use more specific keywords or technical terms",
+      "tip3": "Try a more general description"
+    },
+    "thinking": {
+      "title": "Thinking Process",
+      "found": "Found {count} documents",
+      "original": "Original",
+      "rewritten": "Rewritten",
+      "page": "Page {page}"
+    },
+    "retry": {
+      "title": "Regenerating (attempt {n})",
+      "reason": "Issue detected, regenerating"
+    }
+  },
+  "password": {
+    "title": "Admin Verification",
+    "label": "Password",
+    "placeholder": "Enter admin password",
+    "remember": "Remember password"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{n} min ago",
+    "hoursAgo": "{n} hours ago",
+    "daysAgo": "{n} days ago"
+  },
+  "language": {
+    "zh": "中文",
+    "en": "English"
+  }
+}

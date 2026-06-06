@@ -25,14 +25,14 @@ export interface DeleteDocResult {
 }
 
 /**
- * 获取文档列表（包含每个文档的 chunk 数量）
+ * Get document list (including chunk count for each document)
  */
 export async function listDocuments(): Promise<ListDocsResult> {
   try {
     const { env } = (await getCloudflareContext({ async: true })) as unknown as { env: Env };
     
     if (!env.DB) {
-      return { success: false, error: 'D1数据库未绑定' };
+      return { success: false, error: 'D1 database not bound' };
     }
 
     const docs = await listDocs(env.DB, 100);
@@ -52,16 +52,16 @@ export async function listDocuments(): Promise<ListDocsResult> {
       docs: docsWithChunks,
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '未知错误';
-    return { success: false, error: `获取文档列表失败: ${message}` };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: `Failed to get document list: ${message}` };
   }
 }
 
 /**
- * 删除文档及其所有 chunks
+ * Delete document and all its chunks
  */
 export async function deleteDocument(docId: number, password?: string): Promise<DeleteDocResult> {
-  // 验证管理员密码
+  // Verify admin password
   const verification = await verifyAdminPassword(password);
   if (!verification.valid) {
     return { success: false, error: verification.error };
@@ -71,21 +71,21 @@ export async function deleteDocument(docId: number, password?: string): Promise<
     const { env } = (await getCloudflareContext({ async: true })) as unknown as { env: Env };
     
     if (!env.DB) {
-      return { success: false, error: 'D1数据库未绑定' };
+      return { success: false, error: 'D1 database not bound' };
     }
 
     await deleteChunksByDocId(env.DB, docId);
     const deleted = await deleteDoc(env.DB, docId);
-    
+
     if (!deleted) {
-      return { success: false, error: '文档不存在或已被删除' };
+      return { success: false, error: 'Document does not exist or has been deleted' };
     }
 
     await invalidateCache('all');
 
     return { success: true };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '未知错误';
-    return { success: false, error: `删除文档失败: ${message}` };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: `Failed to delete document: ${message}` };
   }
 }

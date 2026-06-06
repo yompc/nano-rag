@@ -1,0 +1,170 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "发生错误，请重试",
+    "confirm": "确认",
+    "cancel": "取消",
+    "delete": "删除",
+    "close": "关闭",
+    "back": "返回",
+    "submit": "发送",
+    "retry": "重试",
+    "skip": "跳过"
+  },
+  "nav": {
+    "learnMore": "了解更多",
+    "uploadDoc": "上传文档",
+    "docLibrary": "文档库",
+    "history": "历史对话",
+    "newChat": "新建对话"
+  },
+  "home": {
+    "title": "有什么可以帮你的？",
+    "subtitle": "基于文档的智能问答系统",
+    "placeholder": "输入你的问题...",
+    "sendHint": "按 Enter 发送，Shift + Enter 换行",
+    "thinking": "AI 正在思考...",
+    "openHistory": "打开历史记录",
+    "openDocLibrary": "打开文档库"
+  },
+  "landing": {
+    "hero": {
+      "title": "Nano-RAG - 轻量化边缘 RAG 框架",
+      "subtitle": "基于 Next.js + Cloudflare Workers，5分钟构建 AI 知识库应用",
+      "startButton": "开始使用",
+      "sourceButton": "查看源码"
+    },
+    "features": {
+      "title": "核心特性",
+      "edge": {
+        "title": "边缘部署",
+        "desc": "基于 Cloudflare Workers，全球低延迟，毫秒级响应"
+      },
+      "intelligence": {
+        "title": "智能检索",
+        "desc": "LangGraph 编排的多阶段 RAG 管道，精准上下文匹配"
+      },
+      "storage": {
+        "title": "Serverless 存储",
+        "desc": "D1 数据库 + 向量检索，无需额外服务，零运维成本"
+      },
+      "quality": {
+        "title": "质量保障",
+        "desc": "内置幻觉检测、质量检测与自动修复，确保答案可靠性"
+      }
+    },
+    "quickStart": {
+      "title": "快速开始",
+      "step1": "克隆项目",
+      "step2": "安装依赖",
+      "step3": "配置环境变量",
+      "step4": "初始化数据库并启动"
+    },
+    "techStack": {
+      "title": "技术栈",
+      "nextjs": "前端框架",
+      "workers": "边缘运行时",
+      "d1": "SQLite 存储",
+      "langgraph": "AI 编排",
+      "openai": "LLM & Embedding"
+    },
+    "cta": {
+      "title": "开始构建你的 AI 知识库",
+      "subtitle": "上传文档，提问对话，让 AI 为你提供精准答案",
+      "button": "立即体验"
+    },
+    "footer": {
+      "copyright": "© 2025 Nano-RAG. 基于 Next.js + Cloudflare Workers 构建"
+    }
+  },
+  "upload": {
+    "title": "文档上传",
+    "subtitle": "上传PDF文档到知识库，支持智能解析与分类",
+    "pdfFile": "PDF文件",
+    "docType": "文档类型",
+    "docInfo": "文档信息",
+    "filename": "文件名",
+    "pages": "页数",
+    "processing": "正在处理第{current}页，共{total}页...",
+    "uploading": "正在上传...",
+    "confirmUpload": "确认上传",
+    "uploadSuccess": "文档上传成功！",
+    "pageFailed": "第{page}页处理失败，是否重试？",
+    "retryPage": "重试本页",
+    "skipContinue": "跳过继续",
+    "legalNotice": "为符合大陆法律法规，上传文档需密码验证"
+  },
+  "docTypes": {
+    "manual": "手册",
+    "faq": "FAQ",
+    "api_doc": "API文档"
+  },
+  "steps": {
+    "relevance_check": "分析问题",
+    "rewrite": "改写查询",
+    "document_selector": "选择文档",
+    "retrieve": "检索文档",
+    "generate": "生成回答",
+    "check": "验证回答",
+    "quality_check": "质量检测",
+    "complete": "完成"
+  },
+  "sidebar": {
+    "history": {
+      "title": "历史对话",
+      "newChat": "新建对话",
+      "empty": "暂无历史对话",
+      "emptyHint": "开始新对话后，历史记录将保存在这里",
+      "messageCount": "{count} 条消息",
+      "totalChats": "共 {count} 个对话"
+    },
+    "documents": {
+      "title": "文档库",
+      "upload": "上传文档",
+      "empty": "暂无文档",
+      "emptyHint": "上传 PDF 文档后开始提问",
+      "chunks": "{count} 片段",
+      "totalDocs": "共 {docs} 个文档，{chunks} 个片段",
+      "deleteConfirm": "确定删除「{filename}」？"
+    }
+  },
+  "chat": {
+    "sources": "来源",
+    "page": "第 {page} 页",
+    "notFound": {
+      "title": "未找到相关文档",
+      "subtitle": "当前文档库中暂无匹配内容",
+      "suggestion": "建议尝试",
+      "tip1": "上传相关文档到文档库",
+      "tip2": "使用更具体的关键词或专业术语",
+      "tip3": "尝试更通用的描述方式"
+    },
+    "thinking": {
+      "title": "思考过程",
+      "found": "找到 {count} 篇",
+      "original": "原始",
+      "rewritten": "改写",
+      "page": "第 {page} 页"
+    },
+    "retry": {
+      "title": "重新生成 (第{n}次)",
+      "reason": "检测到问题，正在重新生成"
+    }
+  },
+  "password": {
+    "title": "管理员验证",
+    "label": "密码",
+    "placeholder": "请输入管理员密码",
+    "remember": "记住密码"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "minutesAgo": "{n} 分钟前",
+    "hoursAgo": "{n} 小时前",
+    "daysAgo": "{n} 天前"
+  },
+  "language": {
+    "zh": "中文",
+    "en": "English"
+  }
+}

@@ -5,6 +5,7 @@ import { memo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
+import { useTranslations, useLocale } from 'next-intl';
 import { ThinkingProcess, type ThinkingStep } from './thinking-process';
 
 /**
@@ -12,8 +13,8 @@ import { ThinkingProcess, type ThinkingStep } from './thinking-process';
  * @param content 消息内容
  * @returns 是否是无法回答类型
  */
-function isUnableToAnswer(content: string): boolean {
-  const patterns = [
+function isUnableToAnswer(content: string, locale: string): boolean {
+  const patterns = locale === 'zh' ? [
     '无法回答',
     '抱歉',
     '没有找到',
@@ -22,8 +23,17 @@ function isUnableToAnswer(content: string): boolean {
     '未能找到',
     '没有相关信息',
     '无法提供答案',
+  ] : [
+    'unable to answer',
+    'sorry',
+    'not found',
+    'no relevant',
+    'cannot find',
+    'no information',
+    'cannot provide',
+    'no answer',
   ];
-  return patterns.some(pattern => content.includes(pattern));
+  return patterns.some(pattern => content.toLowerCase().includes(pattern));
 }
 
 export interface Source {
@@ -110,12 +120,14 @@ function TypewriterText({ text, isStreaming }: { text: string; isStreaming: bool
 }
 
 const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: ChatMessageProps) {
+  const t = useTranslations('chat');
+  const locale = useLocale();
   const [showSources, setShowSources] = useState(false);
   const isUser = message.role === 'user';
   const hasSources = message.sources && message.sources.length > 0;
   const hasThinking = message.thinkingSteps && message.thinkingSteps.length > 0;
   const skipEntrance = isStreaming && !isUser;
-  const unableToAnswer = !isUser && !isStreaming && isUnableToAnswer(message.content);
+  const unableToAnswer = !isUser && !isStreaming && isUnableToAnswer(message.content, locale);
 
   return (
     <motion.div
@@ -130,9 +142,9 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: 
           animate={{ opacity: 1, y: 0 }}
           className="max-w-[80%] mb-2"
         >
-          <ThinkingProcess 
-            steps={message.thinkingSteps!} 
-            isComplete={!isStreaming} 
+          <ThinkingProcess
+            steps={message.thinkingSteps!}
+            isComplete={!isStreaming}
           />
         </motion.div>
       )}
@@ -156,35 +168,35 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: 
             <div className="px-5 py-4 bg-gradient-to-r from-[var(--surface-soft)] via-[var(--surface-cream-strong)]/30 to-[var(--surface-soft)] border-b border-[var(--hairline-soft)]">
               <div className="flex items-center gap-3">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[var(--canvas)] border border-[var(--hairline)] flex items-center justify-center shadow-sm">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="w-5 h-5 text-[var(--muted)]" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5 text-[var(--muted)]"
+                    fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
-                    aria-label="搜索图标"
+                    aria-label="Search"
                   >
-                    <title>搜索图标</title>
+                    <title>Search</title>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-[var(--ink)] tracking-tight">
-                    未找到相关文档
+                    {t('notFound.title')}
                   </h4>
                   <p className="text-xs text-[var(--muted)] mt-0.5">
-                    当前文档库中暂无匹配内容
+                    {t('notFound.subtitle')}
                   </p>
                 </div>
               </div>
             </div>
           </motion.div>
         )}
-        
+
         <div className={`text-base leading-relaxed ${unableToAnswer ? 'px-5 pt-4 pb-3' : ''}`}>
           <TypewriterText text={message.content} isStreaming={isStreaming && !isUser} />
         </div>
-        
+
         {unableToAnswer && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -195,34 +207,34 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: 
             <div className="mt-3 p-4 rounded-xl bg-[var(--canvas)] border border-[var(--hairline-soft)]">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[var(--accent-amber)]/10 flex items-center justify-center">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="w-4 h-4 text-[var(--accent-amber)]" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-4 h-4 text-[var(--accent-amber)]"
+                    fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
-                    aria-label="灯泡图标"
+                    aria-label="Tip"
                   >
-                    <title>灯泡图标</title>
+                    <title>Tip</title>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[var(--body-strong)] mb-2">
-                    建议尝试
+                    {t('notFound.suggestion')}
                   </p>
                   <ul className="space-y-1.5 text-xs text-[var(--body)]">
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0 w-1 h-1 rounded-full bg-[var(--muted)] mt-1.5" />
-                      <span>上传相关文档到文档库</span>
+                      <span>{t('notFound.tip1')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0 w-1 h-1 rounded-full bg-[var(--muted)] mt-1.5" />
-                      <span>使用更具体的关键词或专业术语</span>
+                      <span>{t('notFound.tip2')}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="flex-shrink-0 w-1 h-1 rounded-full bg-[var(--muted)] mt-1.5" />
-                      <span>尝试更通用的描述方式</span>
+                      <span>{t('notFound.tip3')}</span>
                     </li>
                   </ul>
                 </div>
@@ -253,7 +265,7 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: 
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </motion.svg>
-              来源 ({message.sources!.length})
+              {t('sources')} ({message.sources!.length})
             </button>
 
             {showSources && (
@@ -275,7 +287,7 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: 
                         {source.filename}
                       </span>
                       <span className="text-xs text-[var(--muted)]">
-                        第 {source.page} 页
+                        {t('page', { page: source.page })}
                       </span>
                     </div>
                     <p className="line-clamp-2 text-[var(--muted)]">
@@ -291,7 +303,6 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: 
     </motion.div>
   );
 }, (prevProps, nextProps) => {
-  // 只在关键属性变化时重新渲染
   return (
     prevProps.message.content === nextProps.message.content &&
     prevProps.message.thinkingSteps === nextProps.message.thinkingSteps &&

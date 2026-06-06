@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, memo } from 'react';
+import { useTranslations } from 'next-intl';
 
 export interface SourceWithSimilarity {
   filename: string;
@@ -65,8 +66,8 @@ function StepIcon({ status }: { status: ThinkingStep['status'] }) {
       );
     case 'error':
       return (
-        <svg className="w-3.5 h-3.5 text-[var(--error)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-label="错误">
-          <title>错误</title>
+        <svg className="w-3.5 h-3.5 text-[var(--error)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-label="Error">
+          <title>Error</title>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       );
@@ -78,8 +79,9 @@ function StepIcon({ status }: { status: ThinkingStep['status'] }) {
 }
 
 function DocumentPreview({ source, index }: { source: SourceWithSimilarity; index: number }) {
+  const t = useTranslations('chat.thinking');
   const similarityPercent = Math.round(source.similarity * 100);
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
@@ -87,15 +89,15 @@ function DocumentPreview({ source, index }: { source: SourceWithSimilarity; inde
       transition={{ delay: index * 0.05 }}
       className="flex items-center gap-1.5 py-1 px-1.5 rounded-md text-[10px] bg-[var(--surface-card)]"
     >
-      <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-label="文档">
-        <title>文档</title>
+      <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-label="Document">
+        <title>Document</title>
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
       <span className="font-medium truncate" style={{ color: 'var(--foreground)' }}>
         {source.filename}
       </span>
-      <span style={{ color: 'var(--muted)' }}>第{source.page}页</span>
-      <span 
+      <span style={{ color: 'var(--muted)' }}>{t('page', { page: source.page })}</span>
+      <span
         className="ml-auto font-medium"
         style={{ color: getSimilarityColor(source.similarity) }}
       >
@@ -106,8 +108,10 @@ function DocumentPreview({ source, index }: { source: SourceWithSimilarity; inde
 }
 
 function StepItem({ step, isExpanded }: { step: ThinkingStep; isExpanded: boolean }) {
+  const t = useTranslations('chat.thinking');
+  const tSteps = useTranslations('steps');
   const hasSources = step.metadata?.sources && step.metadata.sources.length > 0;
-  const hasQueryRewrite = step.metadata?.originalQuery && step.metadata?.rewrittenQuery && 
+  const hasQueryRewrite = step.metadata?.originalQuery && step.metadata?.rewrittenQuery &&
     step.metadata.originalQuery !== step.metadata.rewrittenQuery;
 
   return (
@@ -118,11 +122,11 @@ function StepItem({ step, isExpanded }: { step: ThinkingStep; isExpanded: boolea
     >
       <div className="flex items-center gap-1.5">
         <StepIcon status={step.status} />
-        <span 
+        <span
           className={`font-medium text-xs ${step.status === 'error' ? 'text-[var(--error)]' : ''}`}
           style={{ color: step.status === 'error' ? undefined : 'var(--foreground)' }}
         >
-          {step.name}
+          {tSteps(step.name)}
         </span>
         {step.duration !== undefined && (
           <span className="text-[10px]" style={{ color: 'var(--muted)' }}>
@@ -131,7 +135,7 @@ function StepItem({ step, isExpanded }: { step: ThinkingStep; isExpanded: boolea
         )}
         {step.metadata?.count !== undefined && step.status === 'completed' && (
           <span className="text-[10px]" style={{ color: 'var(--primary)' }}>
-            - 找到 {step.metadata.count} 篇
+            - {t('found', { count: step.metadata.count })}
           </span>
         )}
       </div>
@@ -156,11 +160,11 @@ function StepItem({ step, isExpanded }: { step: ThinkingStep; isExpanded: boolea
             className="ml-5 mt-1 space-y-0.5"
           >
             <div className="text-[10px]" style={{ color: 'var(--muted)' }}>
-              <span>原始: </span>
+              <span>{t('original')}: </span>
               <span style={{ color: 'var(--foreground)' }}>{step.metadata!.originalQuery}</span>
             </div>
             <div className="text-[10px]" style={{ color: 'var(--muted)' }}>
-              <span>改写: </span>
+              <span>{t('rewritten')}: </span>
               <span style={{ color: 'var(--primary)' }}>{step.metadata!.rewrittenQuery}</span>
             </div>
           </motion.div>
@@ -183,11 +187,12 @@ function StepItem({ step, isExpanded }: { step: ThinkingStep; isExpanded: boolea
   );
 }
 
-const ThinkingProcess = memo(function ThinkingProcess({ 
-  steps, 
-  isComplete, 
-  className = '' 
+const ThinkingProcess = memo(function ThinkingProcess({
+  steps,
+  isComplete,
+  className = ''
 }: ThinkingProcessProps) {
+  const t = useTranslations('chat.thinking');
   const [isExpanded, setIsExpanded] = useState(true);
 
   useEffect(() => {
@@ -195,7 +200,7 @@ const ThinkingProcess = memo(function ThinkingProcess({
       const timer = setTimeout(() => {
         setIsExpanded(false);
       }, 300);
-      
+
       return () => clearTimeout(timer);
     }
   }, [isComplete]);
@@ -216,7 +221,7 @@ const ThinkingProcess = memo(function ThinkingProcess({
         <div className="flex items-center gap-1.5">
           <span className="text-sm">🧠</span>
           <span className="font-medium text-xs" style={{ color: 'var(--foreground)' }}>
-            思考过程
+            {t('title')}
           </span>
         </div>
         <motion.svg

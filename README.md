@@ -1,131 +1,131 @@
-# Nano-RAG
+# Nano-RAG - Lightweight Edge RAG Framework
 
 <p align="center">
-  <strong>基于 LangGraph 的智能文档问答系统</strong>
+  <strong>Lightweight Edge RAG Framework - Intelligent Document Q&A System based on LangGraph</strong>
   <br>
   <sub>Next.js + Cloudflare Workers + D1</sub>
 </p>
 
 <p align="center">
-  <a href="#功能特性">功能特性</a> •
-  <a href="#快速开始">快速开始</a> •
-  <a href="#架构设计">架构设计</a> •
-  <a href="#部署">部署</a>
+  <a href="#features">Features</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#deployment">Deployment</a>
 </p>
 
 <p align="center">
-  <a href="https://nano-rag.yomigi.com" target="_blank"><strong>在线体验 →</strong></a>
+  <a href="https://nano-rag.yomigi.com" target="_blank"><strong>Live Demo →</strong></a>
 </p>
 
 ---
 
-## 简介
+## Introduction
 
-Nano-RAG 是一个轻量级的检索增强生成（RAG）应用，专为个人和小型团队设计。它能够上传 PDF 文档，通过智能检索和 LLM 生成高质量的问答响应。
+Nano-RAG is a lightweight Retrieval-Augmented Generation (RAG) application designed for individuals and small teams. It enables PDF document upload and generates high-quality Q&A responses through intelligent retrieval and LLM.
 
-**核心特点：**
+**Core Features:**
 
-- 🚀 **边缘部署** - 基于 Cloudflare Workers，全球低延迟
-- 🧠 **智能检索** - LangGraph 编排的多阶段 RAG 管道
-- 💾 **Serverless 存储** - D1 数据库 + 向量检索，无需额外服务
-- 🎯 **质量保障** - 内置幻觉检测、质量检测与自动修复
+- 🚀 **Edge Deployment** - Based on Cloudflare Workers, low latency globally
+- 🧠 **Intelligent Retrieval** - Multi-stage RAG pipeline orchestrated by LangGraph
+- 💾 **Serverless Storage** - D1 database + vector retrieval, no extra services needed
+- 🎯 **Quality Assurance** - Built-in hallucination detection, quality check and auto-repair
 
-## 功能特性
+## Features
 
-### 文档管理
+### Document Management
 
-- PDF 文档上传与解析
-- 自动分片（800-1000 字符/片）
-- 关键词提取与文档分类
+- PDF document upload and parsing
+- Automatic chunking (800-1000 characters/chunk)
+- Keyword extraction and document classification
 
-### 智能问答
+### Intelligent Q&A
 
-- 多轮对话支持
-- 流式响应输出
-- 来源标注溯源
+- Multi-turn conversation support
+- Streaming response output
+- Source citation tracing
 
-### RAG 管道
+### RAG Pipeline
 
 ```
-问题 → 相关性检查 → 查询改写 → 文档选择 → 向量检索 → 生成回答 → 幻觉检测 → 质量检查
-                                    ↑________________重试(最多2次)________________↓
+Question → Relevance Check → Query Rewrite → Document Selection → Vector Retrieval → Generate Answer → Hallucination Check → Quality Check
+                                      ↑________________Retry (max 2 times)________________↓
 ```
 
-| 节点 | 功能 |
+| Node | Function |
 |------|------|
-| `relevance_check` | 判断问题是否适合文档检索 |
-| `rewrite_query` | 优化查询语句 |
-| `document_selector` | 选择相关文档 |
-| `retrieve` | 向量相似度检索 Top-5 |
-| `generate` | LLM 生成回答 |
-| `hallucination_check` | 幻觉检测 |
-| `quality_check` | 质量检测与修复 |
+| `relevance_check` | Check if question is suitable for document retrieval |
+| `rewrite_query` | Optimize query statement |
+| `document_selector` | Select relevant documents |
+| `retrieve` | Vector similarity retrieval Top-5 |
+| `generate` | LLM generate answer |
+| `hallucination_check` | Hallucination detection |
+| `quality_check` | Quality check and repair |
 
-## 技术栈
+## Tech Stack
 
-| 类别 | 技术 |
+| Category | Technology |
 |------|------|
-| 前端 | Next.js 16, React 19, Tailwind CSS 4 |
-| 后端 | Cloudflare Workers, OpenNext |
-| 数据库 | Cloudflare D1 (SQLite) |
-| 编排 | LangGraph |
+| Frontend | Next.js 16, React 19, Tailwind CSS 4 |
+| Backend | Cloudflare Workers, OpenNext |
+| Database | Cloudflare D1 (SQLite) |
+| Orchestration | LangGraph |
 
-## 快速开始
+## Quick Start
 
-### 环境要求
+### Requirements
 
 - Node.js 22.13+
 
-### 安装
+### Installation
 
 ```bash
-# 克隆项目
+# Clone project
 git clone https://github.com/your-username/nano-rag.git
 cd nano-rag
 
-# 安装依赖
+# Install dependencies
 npm install
 
-# 配置环境变量
+# Configure environment variables
 cp .dev.vars.example .dev.vars
-# 编辑 .dev.vars，填入 OPENAI_API_KEY
+# Edit .dev.vars, fill in OPENAI_API_KEY
 
-# 初始化本地数据库
+# Initialize local database
 npx wrangler d1 execute nano-rag-db --local --file=./migrations/0001_init.sql
 ```
 
-### 开发
+### Development
 
 ```bash
-# 本地预览（Cloudflare Workers 运行时，含 D1）
+# Local preview (Cloudflare Workers runtime, with D1)
 npm run preview
-# 访问 http://localhost:8787
+# Visit http://localhost:8787
 
-# 纯开发模式（仅前端，无数据库）
+# Pure dev mode (frontend only, no database)
 npm run dev
-# 访问 http://localhost:3000
+# Visit http://localhost:3000
 ```
 
-### 部署
+### Deployment
 
 ```bash
-# 创建生产数据库
+# Create production database
 npx wrangler d1 create nano-rag-production-db
 
-# 更新 wrangler.toml 中的 database_id
+# Update database_id in wrangler.toml
 
-# 执行数据库迁移
+# Execute database migration
 npx wrangler d1 execute nano-rag-production-db --remote --file=./migrations/0001_init.sql
 
-# 配置 Secrets
+# Configure Secrets
 npx wrangler secret put OPENAI_API_KEY
 
-# 部署
+# Deploy
 npm run deploy
 ```
 
-详细部署指南请参阅 [DEPLOYMENT.md](./DEPLOYMENT.md)。
+For detailed deployment guide, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 <p align="center">
-  <sub>构建 with ❤️ using Next.js, Cloudflare Workers, and LangGraph</sub>
+  <sub>Built with ❤️ using Next.js, Cloudflare Workers, and LangGraph</sub>
 </p>

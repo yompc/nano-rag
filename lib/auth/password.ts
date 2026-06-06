@@ -1,16 +1,16 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 /**
- * 环境变量类型
+ * Environment variables type
  */
 interface Env {
   ADMIN_PASSWORD?: string;
 }
 
 /**
- * 验证管理员密码
- * @param providedPassword 用户提供的密码
- * @returns 验证结果
+ * Verify admin password
+ * @param providedPassword Password provided by user
+ * @returns Verification result
  */
 export async function verifyAdminPassword(
   providedPassword: string | undefined
@@ -21,7 +21,7 @@ export async function verifyAdminPassword(
     const configuredPassword = env.ADMIN_PASSWORD;
     
     if (!configuredPassword) {
-      return { valid: false, error: '功能未启用' };
+      return { valid: false, error: 'Feature not enabled' };
     }
     
     if (!providedPassword || providedPassword !== configuredPassword) {
@@ -30,14 +30,14 @@ export async function verifyAdminPassword(
     
     return { valid: true };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '未知错误';
-    return { valid: false, error: `验证失败: ${message}` };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { valid: false, error: `Verification failed: ${message}` };
   }
 }
 
 /**
- * 检查管理员密码是否已配置
- * @returns 是否已配置密码
+ * Check if admin password is configured
+ * @returns Whether password is configured
  */
 export async function isAdminPasswordConfigured(): Promise<boolean> {
   try {

@@ -1,15 +1,15 @@
 /**
- * 检索模块 - 暴力检索实现
- * 将查询向量与所有chunks进行相似度计算
+ * Retrieval Module - Brute-force retrieval implementation
+ * Calculate similarity between query vector and all chunks
  */
 
 import type { D1Database, Doc } from './types';
-import { getMistralEmbedding } from './embedding';
+import { getOpenAIEmbedding } from './embedding';
 import { cosineSimilarity, parseEmbeddingToFloat32Array, toFloat32Array } from './vector-utils';
 import { getCachedAllChunks, getCachedAllDocs, getCachedChunksByDocIds } from './db';
 
 /**
- * 检索结果项
+ * Retrieval result item
  */
 export interface RetrievedChunk {
   id: number;
@@ -21,45 +21,45 @@ export interface RetrievedChunk {
 }
 
 /**
- * 检索配置
+ * Retrieval configuration
  */
 const RETRIEVE_CONFIG = {
-  topK: 5,  // 返回Top-5 chunks
-  minSimilarity: 0.8  // 最低相似度阈值
+  topK: 5,  // Return Top-5 chunks
+  minSimilarity: 0.8  // Minimum similarity threshold
 };
 
 /**
- * 暴力检索：查询最相关的文档片段
- * @param question - 用户问题
- * @param apiKey - Mistral API密钥
- * @param db - D1数据库实例
- * @returns Top-K个最相关的chunks
+ * Brute-force retrieval: Find most relevant document fragments
+ * @param question - User question
+ * @param apiKey - OpenAI API key
+ * @param db - D1 database instance
+ * @returns Top-K most relevant chunks
  */
 export async function retrieve(
   question: string,
   apiKey: string,
   db: D1Database
 ): Promise<RetrievedChunk[]> {
-  // 1. 生成查询向量
-  const queryEmbedding = await getMistralEmbedding(question, apiKey);
+  // 1. Generate query vector
+  const queryEmbedding = await getOpenAIEmbedding(question, apiKey);
   const queryVector = toFloat32Array(queryEmbedding);
 
-  // 2. 获取所有chunks
+  // 2. Get all chunks
   const allChunks = await getCachedAllChunks(db);
 
   if (allChunks.length === 0) {
     return [];
   }
 
-  // 3. 批量获取文档信息
+  // 3. Batch get document info
   const allDocs = await getCachedAllDocs(db);
   const docMap = new Map(allDocs.map(d => [d.id, d.filename]));
 
-  // 4. 计算每个chunk的相似度
+  // 4. Calculate similarity for each chunk
   const scored = allChunks.map(chunk => {
     const chunkVector = parseEmbeddingToFloat32Array(chunk.embedding_json);
     const similarity = cosineSimilarity(queryVector, chunkVector);
-    
+
     return {
       id: chunk.id,
       doc_id: chunk.doc_id,
@@ -70,21 +70,21 @@ export async function retrieve(
     };
   });
 
-  // 5. 按相似度降序排序
+  // 5. Sort by similarity descending
   scored.sort((a, b) => b.similarity - a.similarity);
 
-  // 6. 过滤低相似度结果并返回Top-K
+  // 6. Filter low similarity results and return Top-K
   return scored
     .filter(item => item.similarity >= RETRIEVE_CONFIG.minSimilarity)
     .slice(0, RETRIEVE_CONFIG.topK);
 }
 
 /**
- * 检索并格式化为上下文字符串
- * @param question - 用户问题
- * @param apiKey - Mistral API密钥
- * @param db - D1数据库实例
- * @returns 格式化的上下文字符串和chunk列表
+ * Retrieve and format as context string
+ * @param question - User question
+ * @param apiKey - OpenAI API key
+ * @param db - D1 database instance
+ * @returns Formatted context string and chunk list
  */
 export async function retrieveWithContext(
   question: string,
@@ -98,7 +98,7 @@ export async function retrieveWithContext(
   }
 
   const context = chunks
-    .map(c => `[${c.filename} 第${c.page}页] ${c.content}`)
+    .map(c => `[${c.filename} Page ${c.page}] ${c.content}`)
     .join('\n\n');
 
   return { context, chunks };
@@ -107,12 +107,12 @@ export async function retrieveWithContext(
 export { RETRIEVE_CONFIG };
 
 /**
- * 按文档ID过滤的检索：只检索指定文档的chunks
- * @param question - 用户问题
- * @param docIds - 要检索的文档ID列表
- * @param apiKey - Mistral API密钥
- * @param db - D1数据库实例
- * @returns Top-K个最相关的chunks
+ * Retrieve with document ID filter: Only retrieve chunks from specified documents
+ * @param question - User question
+ * @param docIds - Document ID list to retrieve
+ * @param apiKey - OpenAI API key
+ * @param db - D1 database instance
+ * @returns Top-K most relevant chunks
  */
 export async function retrieveWithDocFilter(
   question: string,
@@ -120,31 +120,31 @@ export async function retrieveWithDocFilter(
   apiKey: string,
   db: D1Database
 ): Promise<RetrievedChunk[]> {
-  // 空数组直接返回
+  // Empty array returns directly
   if (docIds.length === 0) {
     return [];
   }
 
-  // 1. 生成查询向量
-  const queryEmbedding = await getMistralEmbedding(question, apiKey);
+  // 1. Generate query vector
+  const queryEmbedding = await getOpenAIEmbedding(question, apiKey);
   const queryVector = toFloat32Array(queryEmbedding);
 
-  // 2. 获取指定文档的chunks
+  // 2. Get chunks from specified documents
   const chunks = await getCachedChunksByDocIds(db, docIds);
 
   if (chunks.length === 0) {
     return [];
   }
 
-  // 3. 批量获取文档信息
+  // 3. Batch get document info
   const allDocs = await getCachedAllDocs(db);
   const docMap = new Map(allDocs.map(d => [d.id, d.filename]));
 
-  // 4. 计算每个chunk的相似度
+  // 4. Calculate similarity for each chunk
   const scored = chunks.map(chunk => {
     const chunkVector = parseEmbeddingToFloat32Array(chunk.embedding_json);
     const similarity = cosineSimilarity(queryVector, chunkVector);
-    
+
     return {
       id: chunk.id,
       doc_id: chunk.doc_id,
@@ -155,10 +155,10 @@ export async function retrieveWithDocFilter(
     };
   });
 
-  // 5. 按相似度降序排序
+  // 5. Sort by similarity descending
   scored.sort((a, b) => b.similarity - a.similarity);
 
-  // 6. 过滤低相似度结果并返回Top-K
+  // 6. Filter low similarity results and return Top-K
   return scored
     .filter(item => item.similarity >= RETRIEVE_CONFIG.minSimilarity)
     .slice(0, RETRIEVE_CONFIG.topK);

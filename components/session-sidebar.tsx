@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import type { LocalSession } from '@/lib/session-storage';
 
 interface SessionSidebarProps {
@@ -13,36 +14,36 @@ interface SessionSidebarProps {
   onClose?: () => void;
 }
 
-function formatRelativeTime(timestamp: number): string {
+function formatRelativeTime(timestamp: number, t: ReturnType<typeof useTranslations>): string {
   const now = Date.now();
   const diff = now - timestamp;
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return '刚刚';
-  if (minutes < 60) return `${minutes} 分钟前`;
-  if (hours < 24) return `${hours} 小时前`;
-  if (days < 7) return `${days} 天前`;
+  if (minutes < 1) return t('time.justNow');
+  if (minutes < 60) return t('time.minutesAgo', { n: minutes });
+  if (hours < 24) return t('time.hoursAgo', { n: hours });
+  if (days < 7) return t('time.daysAgo', { n: days });
 
   const date = new Date(timestamp);
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
-function useRelativeTime(timestamp: number): string {
+function useRelativeTime(timestamp: number, t: ReturnType<typeof useTranslations>): string {
   const [relativeTime, setRelativeTime] = useState<string>('');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    setRelativeTime(formatRelativeTime(timestamp));
-    
+    setRelativeTime(formatRelativeTime(timestamp, t));
+
     const interval = setInterval(() => {
-      setRelativeTime(formatRelativeTime(timestamp));
+      setRelativeTime(formatRelativeTime(timestamp, t));
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [timestamp]);
+  }, [timestamp, t]);
 
   if (!mounted) return '';
   return relativeTime;
@@ -53,13 +54,18 @@ function SessionItem({
   isSelected,
   onSelect,
   onDelete,
+  tSidebar,
+  tCommon,
 }: {
   session: LocalSession;
   isSelected: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  tSidebar: ReturnType<typeof useTranslations>;
+  tCommon: ReturnType<typeof useTranslations>;
 }) {
-  const relativeTime = useRelativeTime(session.updatedAt);
+  const t = useTranslations();
+  const relativeTime = useRelativeTime(session.updatedAt, t);
 
   return (
     <div
@@ -82,7 +88,7 @@ function SessionItem({
             {session.title}
           </h3>
           <p className="text-xs text-[var(--muted-soft)] mt-0.5">
-            {session.messages.length} 条消息 · {relativeTime}
+            {tSidebar('messageCount', { count: session.messages.length })} · {relativeTime}
           </p>
         </div>
         <button
@@ -92,7 +98,7 @@ function SessionItem({
             onDelete();
           }}
           className="p-1 text-[var(--muted-soft)] hover:text-[var(--primary)] transition-colors rounded hover:bg-[var(--surface-soft)]"
-          aria-label="删除"
+          aria-label={tCommon('delete')}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -112,6 +118,8 @@ export function SessionSidebar({
   isOpen = true,
   onClose,
 }: SessionSidebarProps) {
+  const tSidebar = useTranslations('sidebar.history');
+  const tCommon = useTranslations('common');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -139,7 +147,7 @@ export function SessionSidebar({
       <div className="hidden md:flex flex-col h-full w-full md:w-56 lg:w-64 bg-[var(--canvas)] border-r border-[var(--hairline)]">
         <div className="flex items-center justify-between p-4 border-b border-[var(--hairline)]">
           <h2 className="text-lg font-semibold text-[var(--body-strong)]">
-            历史对话
+            {tSidebar('title')}
           </h2>
         </div>
         <div className="p-3 border-b border-[var(--hairline)]">
@@ -151,7 +159,7 @@ export function SessionSidebar({
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            新建对话
+            {tSidebar('newChat')}
           </button>
         </div>
         <div className="flex-1 overflow-y-auto scrollbar-thin">
@@ -162,10 +170,10 @@ export function SessionSidebar({
               </svg>
             </div>
             <p className="text-sm text-[var(--body)] mb-2">
-              暂无历史对话
+              {tSidebar('empty')}
             </p>
             <p className="text-xs text-[var(--muted-soft)]">
-              开始新对话后，历史记录将保存在这里
+              {tSidebar('emptyHint')}
             </p>
           </div>
         </div>
@@ -177,14 +185,14 @@ export function SessionSidebar({
     <>
       <div className="flex items-center justify-between p-4 border-b border-[var(--hairline)]">
         <h2 className="text-lg font-semibold text-[var(--body-strong)]">
-          历史对话
+          {tSidebar('title')}
         </h2>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
             className="md:hidden p-2 text-[var(--muted-soft)] hover:text-[var(--primary)] transition-colors rounded-full hover:bg-[var(--surface-soft)]"
-            aria-label="关闭"
+            aria-label={tCommon('close')}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -202,7 +210,7 @@ export function SessionSidebar({
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          新建对话
+          {tSidebar('newChat')}
         </button>
       </div>
 
@@ -215,10 +223,10 @@ export function SessionSidebar({
               </svg>
             </div>
             <p className="text-sm text-[var(--body)] mb-2">
-              暂无历史对话
+              {tSidebar('empty')}
             </p>
             <p className="text-xs text-[var(--muted-soft)]">
-              开始新对话后，历史记录将保存在这里
+              {tSidebar('emptyHint')}
             </p>
           </div>
         ) : (
@@ -227,6 +235,8 @@ export function SessionSidebar({
               <SessionItem
                 key={session.id}
                 session={session}
+                tSidebar={tSidebar}
+                tCommon={tCommon}
                 isSelected={currentSessionId === session.id}
                 onSelect={() => handleSelectSession(session.id)}
                 onDelete={() => onDeleteSession(session.id)}
@@ -239,7 +249,7 @@ export function SessionSidebar({
       {sessions.length > 0 && (
         <div className="p-3 border-t border-[var(--hairline)] text-center">
           <p className="text-xs text-[var(--muted-soft)]">
-            共 {sessions.length} 个对话
+            {tSidebar('totalChats', { count: sessions.length })}
           </p>
         </div>
       )}
@@ -254,9 +264,9 @@ export function SessionSidebar({
             type="button"
             onClick={onClose}
             className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 md:hidden cursor-default"
-            aria-label="关闭侧边栏"
+            aria-label={tCommon('close')}
           />
-          
+
           <div className="fixed left-0 top-0 h-full w-full sm:w-80 z-50 bg-[var(--canvas)] border-r border-[var(--hairline)] shadow-xl flex flex-col animate-slide-in-left md:hidden">
             {sidebarContent}
           </div>

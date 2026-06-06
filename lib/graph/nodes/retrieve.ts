@@ -1,7 +1,7 @@
 /**
- * 检索节点
- * 使用lib/retrieve.ts中的retrieve函数获取Top-5 chunks
- * 支持按 selected_doc_ids 过滤文档
+ * Retrieve Node
+ * Uses retrieve function from lib/retrieve.ts to get Top-5 chunks
+ * Supports filtering by selected_doc_ids
  */
 
 import type { D1Database } from '@/lib/types';
@@ -15,9 +15,9 @@ interface RetrieveNodeInput {
 }
 
 /**
- * 检索节点 - 根据改写后的问题检索相关文档片段
- * @param input - 包含状态、API密钥和数据库的输入
- * @returns 包含top_chunks的状态更新
+ * Retrieve Node - Retrieve relevant document fragments based on rewritten question
+ * @param input - Input containing state, API key and database
+ * @returns State update containing top_chunks
  */
 export async function retrieveNode(
   input: RetrieveNodeInput
@@ -35,10 +35,10 @@ export async function retrieveNode(
   
   try {
     let chunks: RetrievedChunk[];
-    
-    // 情况1: selected_doc_ids === undefined → 全库检索（回退）
-    // 情况2: selected_doc_ids === [] → 返回空（明确无相关文档）
-    // 情况3: selected_doc_ids 非空数组 → 过滤检索
+
+    // Case 1: selected_doc_ids === undefined → full retrieval (fallback)
+    // Case 2: selected_doc_ids === [] → return empty (explicitly no relevant docs)
+    // Case 3: selected_doc_ids non-empty array → filtered retrieval
     if (selectedDocIds === undefined) {
       console.log('[Retrieve Node]', { status: 'using_full_retrieval', reason: 'no_selector_result' });
       chunks = await retrieve(query, apiKey, db);

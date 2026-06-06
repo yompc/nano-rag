@@ -1,11 +1,11 @@
 /**
- * Mistral Embedding API客户端
- * 使用可配置的embedding模型生成向量
+ * OpenAI Embedding API Client
+ * Generate vectors using configurable embedding model
  */
 
 import { EMBEDDING_CONFIG } from './model-config';
 
-export interface MistralEmbeddingResponse {
+export interface OpenAIEmbeddingResponse {
   object: string;
   data: Array<{
     object: string;
@@ -20,13 +20,13 @@ export interface MistralEmbeddingResponse {
 }
 
 /**
- * 获取单个文本的embedding向量
- * @param text - 要生成embedding的文本
- * @param apiKey - Mistral API密钥
- * @param retries - 重试次数（默认3次）
- * @returns 1024维的embedding向量
+ * Get embedding vector for single text
+ * @param text - Text to generate embedding for
+ * @param apiKey - OpenAI API key
+ * @param retries - Number of retries (default 3)
+ * @returns Embedding vector
  */
-export async function getMistralEmbedding(
+export async function getOpenAIEmbedding(
   text: string,
   apiKey: string,
   retries = EMBEDDING_CONFIG.maxRetries
@@ -53,56 +53,56 @@ export async function getMistralEmbedding(
       
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Mistral API ${response.status}: ${errorText}`);
+        throw new Error(`OpenAI API ${response.status}: ${errorText}`);
       }
       
-      const data = await response.json() as MistralEmbeddingResponse;
+      const data = await response.json() as OpenAIEmbeddingResponse;
       
       if (!data.data || data.data.length === 0) {
-        throw new Error('No embedding data returned from Mistral API');
+        throw new Error('No embedding data returned from OpenAI API');
       }
       
       return data.data[0].embedding;
     } catch (error) {
-      // 最后一次重试失败，抛出错误
+      // Last retry failed, throw error
       if (attempt === retries - 1) {
         throw error;
       }
-      
-      // 指数退避：等待时间随重试次数增加
+
+      // Exponential backoff: wait time increases with retry count
       const delay = 1000 * Math.pow(2, attempt);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  
-  throw new Error('Mistral Embedding API failed after all retries');
+
+  throw new Error('OpenAI Embedding API failed after all retries');
 }
 
 /**
- * 批量获取多个文本的embedding向量
- * @param texts - 文本数组
- * @param apiKey - Mistral API密钥
- * @returns embedding向量数组
+ * Batch get embedding vectors for multiple texts
+ * @param texts - Text array
+ * @param apiKey - OpenAI API key
+ * @returns Embedding vector array
  */
-export async function getMistralEmbeddings(
+export async function getOpenAIEmbeddings(
   texts: string[], 
   apiKey: string
 ): Promise<number[][]> {
   const embeddings: number[][] = [];
   
-  // Mistral API支持批量请求，但为了稳定性，我们逐个处理
+  // Process individually for stability
   for (const text of texts) {
-    const embedding = await getMistralEmbedding(text, apiKey);
+    const embedding = await getOpenAIEmbedding(text, apiKey);
     embeddings.push(embedding);
   }
-  
+
   return embeddings;
 }
 
 /**
- * 验证embedding向量维度
- * @param embedding - embedding向量
- * @returns 是否为有效的向量
+ * Validate embedding vector dimensions
+ * @param embedding - Embedding vector
+ * @returns Whether vector is valid
  */
 export function validateEmbedding(embedding: number[]): boolean {
   return Array.isArray(embedding) &&

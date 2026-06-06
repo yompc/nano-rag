@@ -18,10 +18,10 @@ function getEnvVar(key: string, defaultValue: string): string {
  */
 export const CHAT_CONFIG = {
   // 模型名称
-  model: getEnvVar('CHAT_MODEL', 'mistral-small-latest'),
+  model: getEnvVar('CHAT_MODEL', 'gpt-4o-mini'),
 
   // API 端点
-  endpoint: getEnvVar('CHAT_ENDPOINT', 'https://api.mistral.ai/v1/chat/completions'),
+  endpoint: getEnvVar('CHAT_ENDPOINT', 'https://api.openai.com/v1/chat/completions'),
 
   // 生成温度
   temperature: parseFloat(getEnvVar('CHAT_TEMPERATURE', '0.3')),
@@ -29,7 +29,7 @@ export const CHAT_CONFIG = {
   // 超时时间（毫秒）
   timeout: parseInt(getEnvVar('CHAT_TIMEOUT', '30000'), 10),
 
-  // 上下文窗口大小 (Mistral Small 3.1 = 128k)
+  // 上下文窗口大小 (GPT-4o-mini = 128k)
   contextWindow: parseInt(getEnvVar('CHAT_CONTEXT_WINDOW', '128000'), 10),
 
   // 最大输出 token 数 (上下文窗口的 90% 用于安全边界，但实际输出通常更小)
@@ -42,13 +42,13 @@ export const CHAT_CONFIG = {
  */
 export const EMBEDDING_CONFIG = {
   // 模型名称
-  model: getEnvVar('EMBEDDING_MODEL', 'mistral-embed'),
+  model: getEnvVar('EMBEDDING_MODEL', 'text-embedding-3-small'),
 
   // API 端点
-  endpoint: getEnvVar('EMBEDDING_ENDPOINT', 'https://api.mistral.ai/v1/embeddings'),
+  endpoint: getEnvVar('EMBEDDING_ENDPOINT', 'https://api.openai.com/v1/embeddings'),
 
   // 向量维度
-  dimensions: parseInt(getEnvVar('EMBEDDING_DIMENSIONS', '1024'), 10),
+  dimensions: parseInt(getEnvVar('EMBEDDING_DIMENSIONS', '1536'), 10),
 
   // 超时时间（毫秒）
   timeout: parseInt(getEnvVar('EMBEDDING_TIMEOUT', '10000'), 10),

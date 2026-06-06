@@ -1,6 +1,6 @@
 /**
- * 质量检测修复节点
- * 使用LLM检测回答中的格式问题并自动修复
+ * Quality Check and Repair Node
+ * Uses LLM to detect format issues in answer and auto-repair
  */
 
 import type { RAGState, QualityIssue } from '../state';
@@ -11,7 +11,7 @@ import {
   buildQualityCheckUserPrompt
 } from '../prompts/quality-check-prompt';
 
-interface MistralChatResponse {
+interface OpenAIChatResponse {
   choices: Array<{
     message: {
       content: string;
@@ -31,9 +31,9 @@ interface QualityCheckResult {
 }
 
 /**
- * 质量检测修复节点
- * @param input - 包含状态和API密钥的输入
- * @returns 包含质量检测结果的状态更新
+ * Quality check and repair node
+ * @param input - Input containing state and API key
+ * @returns State update with quality check results
  */
 export async function qualityCheckNode(
   input: QualityCheckInput
@@ -41,7 +41,7 @@ export async function qualityCheckNode(
   const { state, apiKey } = input;
   const { answer, top_chunks, question } = state;
 
-  // 如果没有回答，直接返回
+  // If no answer, return directly
   if (!answer) {
     return { quality_issues: null, fixed_answer: null };
   }
@@ -70,8 +70,8 @@ export async function qualityCheckNode(
       fixed_answer: result.fixedAnswer
     };
   } catch (error) {
-    console.error('质量检测失败:', error);
-    // 检测失败时，返回原始回答
+    console.error('Quality check failed:', error);
+    // On check failure, return original answer
     return { quality_issues: null, fixed_answer: null };
   }
 }
@@ -84,7 +84,7 @@ interface PerformQualityCheckInput {
 }
 
 /**
- * 使用LLM进行质量检测和修复
+ * Perform quality check and repair using LLM
  */
 async function performQualityCheck(
   input: PerformQualityCheckInput
@@ -118,13 +118,13 @@ async function performQualityCheck(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`Mistral API ${response.status}`);
+      throw new Error(`OpenAI API ${response.status}`);
     }
 
-    const data = await response.json() as MistralChatResponse;
+    const data = await response.json() as OpenAIChatResponse;
 
     if (!data.choices || data.choices.length === 0) {
-      throw new Error('No response from Mistral');
+      throw new Error('No response from OpenAI');
     }
 
     const result = data.choices[0].message.content.trim();
@@ -139,34 +139,34 @@ async function performQualityCheck(
 }
 
 /**
- * 解析LLM返回的质量检测结果
+ * Parse quality check result returned by LLM
  */
 function parseQualityCheckResult(result: string): QualityCheckResult {
   try {
-    // 尝试提取JSON部分
+    // Try to extract JSON part
     let jsonStr = result;
 
-    // 如果返回包含markdown代码块，提取其中的JSON
+    // If return contains markdown code block, extract JSON from it
     const jsonMatch = result.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) {
       jsonStr = jsonMatch[1].trim();
     }
 
-    // 尝试找到JSON对象的开始和结束
+    // Try to find start and end of JSON object
     const startIndex = jsonStr.indexOf('{');
     const endIndex = jsonStr.lastIndexOf('}');
     if (startIndex !== -1 && endIndex !== -1) {
       jsonStr = jsonStr.slice(startIndex, endIndex + 1);
     }
 
-    // 修复JSON字符串中的控制字符问题
-    // 在字符串值内的未转义换行符会导致JSON解析失败
-    // 使用状态机方式处理，只转义字符串值内的控制字符
+    // Fix control character issues in JSON string
+    // Unescaped newlines in string values cause JSON parse failures
+    // Use state machine approach, only escape control chars within string values
     jsonStr = sanitizeJsonString(jsonStr);
 
     const parsed = JSON.parse(jsonStr);
 
-    // 验证并规范化结果
+    // Validate and normalize result
     const hasIssues = Boolean(parsed.hasIssues);
     const issues: QualityIssue[] = Array.isArray(parsed.issues)
       ? parsed.issues.map((issue: Record<string, unknown>) => ({
@@ -188,7 +188,7 @@ function parseQualityCheckResult(result: string): QualityCheckResult {
     };
   } catch (error) {
     console.error('[Quality Check] Failed to parse result:', error);
-    // 解析失败，返回原始回答
+    // Parse failed, return original answer
     return {
       hasIssues: false,
       issues: [],
@@ -198,8 +198,8 @@ function parseQualityCheckResult(result: string): QualityCheckResult {
 }
 
 /**
- * 清理JSON字符串中的控制字符
- * 只处理字符串值内的未转义控制字符，不影响JSON结构
+ * Sanitize control characters in JSON string
+ * Only handles unescaped control chars in string values, doesn't affect JSON structure
  */
 function sanitizeJsonString(jsonStr: string): string {
   let result = '';
@@ -247,7 +247,7 @@ function sanitizeJsonString(jsonStr: string): string {
 }
 
 /**
- * 验证问题类型
+ * Validate issue type
  */
 function validateIssueType(type: string): QualityIssue['type'] {
   const validTypes: QualityIssue['type'][] = [
@@ -262,7 +262,7 @@ function validateIssueType(type: string): QualityIssue['type'] {
 }
 
 /**
- * 验证严重程度
+ * Validate severity
  */
 function validateSeverity(severity: string): QualityIssue['severity'] {
   const validSeverities: QualityIssue['severity'][] = ['low', 'medium', 'high'];

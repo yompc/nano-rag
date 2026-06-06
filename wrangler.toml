@@ -12,11 +12,12 @@ binding = "ASSETS"
 
 [vars]
 ENVIRONMENT = "production"
+CHAT_MODEL = "mistral-medium-2508"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "nano-rag-production-db"
-database_id = "xxx"
+database_id = "67734952-49a6-48cc-ac61-1d8d0d055ddc"
 
 [observability]
 enabled = true

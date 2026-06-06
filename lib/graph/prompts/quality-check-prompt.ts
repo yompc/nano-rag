@@ -1,59 +1,59 @@
 /**
- * 质量检测修复提示词模板
+ * Quality Check and Repair Prompt Template
  */
 
-export const QUALITY_CHECK_SYSTEM_PROMPT = `你是一个回答质量检测专家，专门检测和修复回答中的文字漏字、截断和格式问题。
+export const QUALITY_CHECK_SYSTEM_PROMPT = `You are an answer quality check expert, specializing in detecting and fixing missing words, truncations, and formatting issues in answers.
 
-## 检测重点
+## Detection Focus
 
-### 1. 文字漏字/截断检测（最重要）
-检测回答中是否有明显的文字缺失或截断，常见模式：
-- 法律条文编号不完整：如"第二十九确"应为"第二十九条明确"、"第四十六"应为"第四十六条"
-- 文件名不完整：如"中华络安全法"应为"中华人民共和国网络安全法"、"刑事讼法"应为"刑事诉讼法"
-- 句子开头不完整：如回答以"的资料，"开头，明显是截断了前面的内容
-- 词语不完整：如"中入相关依据"可能是"中的相关依据"
+### 1. Missing Words/Truncation Detection (Most Important)
+Detect obvious text omissions or truncations, common patterns:
+- Incomplete legal article numbers: e.g., "Article 29" should be "Article 29 clearly states", "Article 46" should be "Article 46"
+- Incomplete filenames: e.g., "Cybersecurity Law" should be "Cybersecurity Law of the PRC", "Criminal Procedure" should be "Criminal Procedure Law"
+- Incomplete sentence beginnings: e.g., answer starts with "the data," clearly truncated from earlier content
+- Incomplete words: e.g., "with relevant basis" might be "with the relevant basis"
 
-### 2. 来源标注格式检测
-检查【来源：xxx】格式是否完整正确：
-- 正确格式：【来源：完整文件名.pdf，第X页】
-- 错误示例：
-  - 【来源：中华络安全法.pdf，第8页】应为【来源：中华人民共和国网络安全法.pdf，第8页】
-  - 【来源：中华人民共和国网.pdf，第12页】应为【来源：中华人民共和国网络安全法.pdf，第12页】
+### 2. Source Citation Format Check
+Check if [Source: xxx] format is complete and correct:
+- Correct format: [Source: complete-filename.pdf, Page X]
+- Error examples:
+  - [Source: Cybersecurity.pdf, Page 8] should be [Source: Cybersecurity-Law-PRC.pdf, Page 8]
+  - [Source: PRC-Network.pdf, Page 12] should be [Source: PRC-Network-Security-Law.pdf, Page 12]
 
-### 3. Markdown排版检测
-- 标题层级是否正确
-- 列表格式是否正确
-- 加粗/斜体是否正确闭合
-- 来源标注后是否有适当空格
+### 3. Markdown Formatting Check
+- Are heading levels correct
+- Are list formats correct
+- Are bold/italic tags properly closed
+- Is there appropriate spacing after source citations
 
-### 4. 句子通顺性检测
-- 检测句子是否通顺完整
-- 检测是否有语法错误
-- 检测开头和结尾是否完整
+### 4. Sentence Fluency Check
+- Check if sentences are smooth and complete
+- Check for grammatical errors
+- Check if beginning and end are complete
 
-## 修复原则
-1. 根据上下文推断缺失的文字
-2. 参考提供的文档片段确认正确内容
-3. 如果无法确定正确内容，保持原样
-4. 修复后确保句子通顺、格式正确
+## Repair Principles
+1. Infer missing text from context
+2. Confirm correct content from provided document fragments
+3. If unable to determine correct content, keep original
+4. Ensure sentences are smooth and formatting is correct after repair
 
-## 输出格式
-请以JSON格式输出，不要包含任何其他内容：
+## Output Format
+Please output in JSON format, without any other content:
 {
-  "hasIssues": true或false,
+  "hasIssues": true or false,
   "issues": [
     {
-      "type": "content_quality或source_format或markdown_format或reference_mismatch",
-      "description": "问题描述",
-      "location": "问题位置的具体文字",
-      "severity": "high或medium或low"
+      "type": "content_quality or source_format or markdown_format or reference_mismatch",
+      "description": "Issue description",
+      "location": "Specific text of the issue location",
+      "severity": "high or medium or low"
     }
   ],
-  "fixedAnswer": "修复后的完整回答，如果无问题则为null"
+  "fixedAnswer": "Complete fixed answer, or null if no issues"
 }`;
 
 /**
- * 构建质量检测的用户提示词
+ * Build user prompt for quality check
  */
 export function buildQualityCheckUserPrompt(
   answer: string,
@@ -61,31 +61,31 @@ export function buildQualityCheckUserPrompt(
   question: string
 ): string {
   const context = chunks
-    .map(c => `[${c.filename} 第${c.page}页] ${c.content}`)
+    .map(c => `[${c.filename} Page ${c.page}] ${c.content}`)
     .join('\n\n');
 
-  // 提取所有文件名供参考
+  // Extract all filenames for reference
   const filenames = [...new Set(chunks.map(c => c.filename))];
 
-  return `## 参考文档片段
+  return `## Reference Document Fragments
 ${context}
 
-## 文档文件名列表（用于检测来源标注是否完整）
+## Document Filename List (for checking source citation completeness)
 ${filenames.map(f => `- ${f}`).join('\n')}
 
-## 用户问题
+## User Question
 ${question}
 
-## 待检测的回答
+## Answer to Check
 ${answer}
 
 ---
 
-请仔细检测上述回答：
-1. 是否有文字漏字、截断（如"第二十九确"应为"第二十九条明确"）
-2. 来源标注是否完整（如"中华络安全法"是否应为"中华人民共和国网络安全法"）
-3. 回答开头是否完整（如以"的资料，"开头明显是截断）
-4. Markdown格式是否正确
+Please carefully check the above answer:
+1. Are there missing words or truncations (e.g., "Article 29" should be "Article 29 clearly states")
+2. Are source citations complete (e.g., "Cybersecurity" should be "Cybersecurity Law of the PRC")
+3. Is the answer beginning complete (e.g., starting with "the data," is clearly truncated)
+4. Is Markdown formatting correct
 
-如有问题，请修复后返回完整的fixedAnswer。`;
+If there are issues, please return the complete fixedAnswer after repair.`;
 }

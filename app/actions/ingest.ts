@@ -3,7 +3,7 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database } from '@/lib/types';
 import { chunkText, type TextChunk } from '@/lib/chunking';
-import { getMistralEmbedding, validateEmbedding } from '@/lib/embedding';
+import { getOpenAIEmbedding, validateEmbedding } from '@/lib/embedding';
 import { extractKeywords } from '@/lib/keywords';
 import { createDoc, deleteDoc, deleteChunksByDocId, invalidateCache } from '@/lib/db';
 import { verifyAdminPassword } from '@/lib/auth/password';
@@ -16,7 +16,7 @@ const INGEST_CONFIG = {
 };
 
 /**
- * 解析后的PDF页面数据
+ * Parsed PDF page data
  */
 interface ParsedPage {
   pageNumber: number;
@@ -24,7 +24,7 @@ interface ParsedPage {
 }
 
 /**
- * 入库输入数据
+ * Ingest input data
  */
 interface IngestInput {
   filename: string;
@@ -33,7 +33,7 @@ interface IngestInput {
 }
 
 /**
- * 入库结果
+ * Ingest result
  */
 interface IngestResult {
   success: boolean;
@@ -43,7 +43,7 @@ interface IngestResult {
 }
 
 /**
- * 准备写入的chunk数据
+ * Prepared chunk data for writing
  */
 interface PreparedChunk {
   content: string;
@@ -54,7 +54,7 @@ interface PreparedChunk {
 }
 
 /**
- * Cloudflare环境变量类型
+ * Cloudflare environment variables type
  */
 interface Env {
   DB: D1Database;
@@ -65,22 +65,22 @@ export async function ingestDocument(input: IngestInput): Promise<IngestResult> 
   const { env } = (await getCloudflareContext({ async: true })) as unknown as { env: Env };
   
   if (!env.DB) {
-    return { success: false, error: 'D1数据库未绑定' };
+    return { success: false, error: 'D1 database not bound' };
   }
-  
+
   if (!env.OPENAI_API_KEY) {
-    return { success: false, error: 'OPENAI_API_KEY未配置' };
+    return { success: false, error: 'OPENAI_API_KEY not configured' };
   }
 
   if (!input.filename || !input.pages || input.pages.length === 0) {
-    return { success: false, error: '无效的输入数据' };
+    return { success: false, error: 'Invalid input data' };
   }
 
   let docId: number | null = null;
 
   try {
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('入库超时')), INGEST_CONFIG.timeout);
+      setTimeout(() => reject(new Error('Ingestion timeout')), INGEST_CONFIG.timeout);
     });
 
     const ingestPromise = async (): Promise<IngestResult> => {
@@ -90,7 +90,7 @@ export async function ingestDocument(input: IngestInput): Promise<IngestResult> 
       });
 
       if (!docId) {
-        throw new Error('创建文档记录失败');
+        throw new Error('Failed to create document record');
       }
 
       const allChunks: TextChunk[] = [];
@@ -101,9 +101,9 @@ export async function ingestDocument(input: IngestInput): Promise<IngestResult> 
 
       if (allChunks.length > INGEST_CONFIG.maxChunksPerDoc) {
         await deleteDoc(env.DB, docId);
-        return { 
-          success: false, 
-          error: `文档chunks数量超过限制（${allChunks.length} > ${INGEST_CONFIG.maxChunksPerDoc}）` 
+        return {
+          success: false,
+          error: `Document chunks exceed limit (${allChunks.length} > ${INGEST_CONFIG.maxChunksPerDoc})`
         };
       }
 
@@ -111,10 +111,10 @@ export async function ingestDocument(input: IngestInput): Promise<IngestResult> 
       
       for (let i = 0; i < allChunks.length; i++) {
         const chunk = allChunks[i];
-        const embedding = await getMistralEmbedding(chunk.content, env.OPENAI_API_KEY);
+        const embedding = await getOpenAIEmbedding(chunk.content, env.OPENAI_API_KEY);
 
         if (!validateEmbedding(embedding)) {
-          throw new Error(`Chunk ${i + 1} embedding验证失败`);
+          throw new Error(`Chunk ${i + 1} embedding validation failed`);
         }
 
         const keywords = await extractKeywords(chunk.content, env.OPENAI_API_KEY);
@@ -170,24 +170,24 @@ export async function ingestDocument(input: IngestInput): Promise<IngestResult> 
         await deleteChunksByDocId(env.DB, docId);
         await deleteDoc(env.DB, docId);
       } catch (rollbackError) {
-        console.error('回滚失败:', rollbackError);
+        console.error('Rollback failed:', rollbackError);
       }
     }
 
-    const message = error instanceof Error ? error.message : '未知错误';
-    return { success: false, error: `入库失败: ${message}` };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: `Ingestion failed: ${message}` };
   }
 }
 
 /**
- * 批量入库多个文档
- * @param inputs - 文档输入数组
- * @returns 每个文档的入库结果
+ * Batch ingest multiple documents
+ * @param inputs - Document input array
+ * @returns Ingest result for each document
  */
 /**
- * 创建文档记录（不处理内容）
- * @param input - 文档基本信息
- * @returns 创建结果
+ * Create document record (without processing content)
+ * @param input - Document basic info
+ * @returns Creation result
  */
 export async function createDocument(input: {
   filename: string;
@@ -206,30 +206,30 @@ export async function createDocument(input: {
   const { env } = (await getCloudflareContext({ async: true })) as unknown as { env: Env };
   
   if (!env.DB) {
-    return { success: false, error: 'D1数据库未绑定' };
+    return { success: false, error: 'D1 database not bound' };
   }
-  
+
   if (!input.filename || input.filename.trim() === '') {
-    return { success: false, error: '文件名不能为空' };
+    return { success: false, error: 'Filename cannot be empty' };
   }
-  
+
   try {
     const docId = await createDoc(env.DB, {
       filename: input.filename.trim(),
       doc_type: input.doc_type
     });
-    
+
     if (!docId) {
-      return { success: false, error: '创建文档记录失败' };
+      return { success: false, error: 'Failed to create document record' };
     }
-    
+
     return {
       success: true,
       docId
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '未知错误';
-    return { success: false, error: `创建文档失败: ${message}` };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: `Failed to create document: ${message}` };
   }
 }
 
@@ -245,11 +245,11 @@ export async function ingestDocuments(inputs: IngestInput[]): Promise<IngestResu
 }
 
 /**
- * 单页PDF入库
- * 处理单页PDF的分块、embedding、关键词提取和数据库写入
- * 
- * @param input - 单页入库输入
- * @returns 入库结果及进度信息
+ * Single page PDF ingestion
+ * Process chunking, embedding, keyword extraction and database write for a single page
+ *
+ * @param input - Single page ingest input
+ * @returns Ingest result and progress info
  */
 export async function ingestPage(input: {
   docId: number;
@@ -269,16 +269,16 @@ export async function ingestPage(input: {
   const { env } = (await getCloudflareContext({ async: true })) as unknown as { env: Env };
   
   if (!env.DB) {
-    return { 
-      success: false, 
-      docId: input.docId, 
-      chunksInPage: 0, 
-      isComplete: false, 
-      progress: 0, 
-      error: 'D1数据库未绑定' 
+    return {
+      success: false,
+      docId: input.docId,
+      chunksInPage: 0,
+      isComplete: false,
+      progress: 0,
+      error: 'D1 database not bound'
     };
   }
-  
+
   if (!env.OPENAI_API_KEY) {
     return {
       success: false,
@@ -286,13 +286,13 @@ export async function ingestPage(input: {
       chunksInPage: 0,
       isComplete: false,
       progress: 0,
-      error: 'OPENAI_API_KEY未配置'
+      error: 'OPENAI_API_KEY not configured'
     };
   }
 
   try {
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('单页入库超时')), 60000);
+      setTimeout(() => reject(new Error('Page ingestion timeout')), 60000);
     });
 
     const ingestPromise = async () => {
@@ -301,7 +301,7 @@ export async function ingestPage(input: {
       const preparedChunks = await Promise.all(
         pageChunks.map(async (chunk) => {
           const [embedding, keywords] = await Promise.all([
-            getMistralEmbedding(chunk.content, env.OPENAI_API_KEY),
+            getOpenAIEmbedding(chunk.content, env.OPENAI_API_KEY),
             extractKeywords(chunk.content, env.OPENAI_API_KEY)
           ]);
           
@@ -354,14 +354,14 @@ export async function ingestPage(input: {
     return await Promise.race([ingestPromise(), timeoutPromise]);
 
   } catch (error) {
-    const message = error instanceof Error ? error.message : '未知错误';
-    return { 
-      success: false, 
-      docId: input.docId, 
-      chunksInPage: 0, 
-      isComplete: false, 
-      progress: 0, 
-      error: `单页入库失败: ${message}` 
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return {
+      success: false,
+      docId: input.docId,
+      chunksInPage: 0,
+      isComplete: false,
+      progress: 0,
+      error: `Page ingestion failed: ${message}`
     };
   }
 }

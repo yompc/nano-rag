@@ -1,13 +1,13 @@
 /**
- * RAG状态定义
- * LangGraph状态机使用的类型和Annotation定义
+ * RAG State Definition
+ * Types and Annotation definitions used by LangGraph state machine
  */
 
 import { Annotation } from '@langchain/langgraph';
 import type { RetrievedChunk } from '@/lib/retrieve';
 
 /**
- * 消息类型
+ * Message type
  */
 export interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -15,7 +15,7 @@ export interface Message {
 }
 
 /**
- * 质量问题类型
+ * Quality issue type
  */
 export interface QualityIssue {
   type: 'source_format' | 'content_quality' | 'reference_mismatch' | 'markdown_format';
@@ -25,8 +25,8 @@ export interface QualityIssue {
 }
 
 /**
- * RAG状态Annotation
- * 定义LangGraph状态机的完整状态结构
+ * RAG State Annotation
+ * Defines the complete state structure of LangGraph state machine
  */
 export const RAGStateAnnotation = Annotation.Root({
   question: Annotation<string>,
@@ -78,7 +78,7 @@ export const RAGStateAnnotation = Annotation.Root({
 });
 
 /**
- * RAG状态类型（从Annotation推断）
+ * RAG State type (inferred from Annotation)
  */
 export type RAGState = {
   question: string;

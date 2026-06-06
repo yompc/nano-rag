@@ -67,7 +67,7 @@ export function createRAGGraph(context: GraphContext) {
   });
   
   workflow.addNode('insufficient_data', () => {
-    return { answer: '抱歉，根据现有资料无法生成准确回答。' } as Partial<RAGState>;
+    return { answer: 'Sorry, unable to generate an accurate answer based on available documents.' } as Partial<RAGState>;
   });
   
   const typedWorkflow = workflow as StateGraph<typeof RAGStateAnnotation, RAGState, Partial<RAGState>, GraphNodes>;
@@ -151,7 +151,7 @@ export async function runRAG(input: RunRAGInput): Promise<RunRAGResult> {
   } as RAGState);
 
   return {
-    answer: result.fixed_answer || result.answer || '未能生成回答',
+    answer: result.fixed_answer || result.answer || 'Failed to generate answer',
     sources: result.top_chunks.map(chunk => ({
       filename: chunk.filename || 'unknown',
       page: chunk.page,
@@ -167,10 +167,10 @@ interface RunRAGStreamInput extends RunRAGInput {
 }
 
 /**
- * 流式RAG执行函数
- * 在关键步骤调用controller回调发送事件，记录每个节点的耗时
- * @param input - 包含问题、消息历史、API密钥、数据库、控制器和会话ID的输入
- * @returns RAG执行结果
+ * Stream RAG execution function
+ * Calls controller callbacks at key steps, records duration of each node
+ * @param input - Input containing question, message history, API key, database, controller and session ID
+ * @returns RAG execution result
  */
 export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResult> {
   const { question, messages, apiKey, db, controller } = input;
@@ -193,17 +193,17 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
 
   try {
     // 1. Rewrite Query Node
-    controller.sendStatus('rewrite', '正在优化查询...');
+    controller.sendStatus('rewrite', 'Optimizing query...');
     const rewriteStart = Date.now();
     const rewriteResult = await rewriteQueryNode(state, apiKey);
     state = { ...state, ...rewriteResult };
-    controller.sendStatus('rewrite', '查询优化完成', { duration: Date.now() - rewriteStart });
-    controller.sendThinking('rewrite', `查询改写: "${state.rewritten_question || question}"`, {
+    controller.sendStatus('rewrite', 'Query optimization complete', { duration: Date.now() - rewriteStart });
+    controller.sendThinking('rewrite', `Query rewritten: "${state.rewritten_question || question}"`, {
       query: state.rewritten_question || question
     });
 
     // 2. Document Selector Node
-    controller.sendStatus('document_selector', '正在选择相关文档...');
+    controller.sendStatus('document_selector', 'Selecting relevant documents...');
     const docSelectorStart = Date.now();
     const docSelectorResult = await documentSelectorNode({ state, apiKey, db });
     state = { ...state, ...docSelectorResult };
@@ -211,23 +211,23 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
     console.log('[RAG Stream] Document selector completed:', {
       selectedCount: state.selected_doc_ids?.length ?? 0
     });
-    controller.sendStatus('document_selector', '文档选择完成', {
+    controller.sendStatus('document_selector', 'Document selection complete', {
       duration: docSelectorDuration,
       selectedCount: state.selected_doc_ids?.length ?? 0
     });
     const selectedDocs = state.selected_doc_ids?.length || 0;
-      controller.sendThinking('document_selector', `从文档库中选择了 ${selectedDocs} 个相关文档`, {
+      controller.sendThinking('document_selector', `Selected ${selectedDocs} relevant documents from library`, {
       documents: state.selected_doc_ids?.map(id => id.toString()) || []
     });
 
     // 3. Retrieve Node
-    controller.sendStatus('retrieve', '正在检索相关文档...');
+    controller.sendStatus('retrieve', 'Retrieving relevant documents...');
     const retrieveStart = Date.now();
     const retrieveResult = await retrieveNode({ state, apiKey, db });
     state = { ...state, ...retrieveResult };
     const retrieveDuration = Date.now() - retrieveStart;
 
-    // 发送 sources 事件
+    // Send sources event
     if (state.top_chunks.length > 0) {
       finalSources = state.top_chunks.map(chunk => ({
         id: chunk.id,
@@ -240,12 +240,12 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
       controller.sendSources(finalSources);
     }
     if (state.top_chunks.length > 0) {
-      controller.sendThinking('retrieve', `检索到 ${state.top_chunks.length} 个相关文档片段`, {
+      controller.sendThinking('retrieve', `Retrieved ${state.top_chunks.length} relevant document fragments`, {
         documents: state.top_chunks.map(c => c.filename),
         confidence: state.top_chunks[0]?.similarity
       });
     }
-    controller.sendStatus('retrieve', '文档检索完成', { duration: retrieveDuration });
+    controller.sendStatus('retrieve', 'Document retrieval complete', { duration: retrieveDuration });
 
     // 3. Generate and Hallucination Check with Retry Logic
     let shouldRetry = true;
@@ -253,34 +253,34 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
 
     while (shouldRetry && retryIteration <= MAX_RETRIES) {
       // Generate Node
-      controller.sendStatus('generate', retryIteration > 0 ? `正在重新生成回答（第${retryIteration}次重试）...` : '正在生成回答...');
+      controller.sendStatus('generate', retryIteration > 0 ? `Regenerating answer (retry ${retryIteration})...` : 'Generating answer...');
       const generateStart = Date.now();
-      const generateResult = await generateStreamNode({ 
-        state, 
-        apiKey, 
+      const generateResult = await generateStreamNode({
+        state,
+        apiKey,
         onChunk: (content: string) => {
           controller.sendChunk(content);
         }
       });
       state = { ...state, ...generateResult };
-      controller.sendStatus('generate', '回答生成完成', { duration: Date.now() - generateStart, retryCount: retryIteration });
-      controller.sendThinking('generate', `基于检索到的 ${finalSources.length} 个文档片段生成回答`, {
+      controller.sendStatus('generate', 'Answer generation complete', { duration: Date.now() - generateStart, retryCount: retryIteration });
+      controller.sendThinking('generate', `Generated answer based on ${finalSources.length} document fragments`, {
         documents: finalSources.map(s => s.filename)
       });
 
       // Hallucination Check Node
-      controller.sendStatus('check', '正在验证回答准确性...');
+      controller.sendStatus('check', 'Verifying answer accuracy...');
       const checkStart = Date.now();
       const checkResult = await hallucinationCheckNode({ state, apiKey });
       state = { ...state, ...checkResult };
-      controller.sendStatus('check', '验证完成', { duration: Date.now() - checkStart });
-      const checkResultText = state.hallucination === false ? '通过' : '未通过';
-      controller.sendThinking('check', `回答验证${checkResultText}${state.retry_count > 0 ? ` (第 ${state.retry_count} 次重试)` : ''}`);
+      controller.sendStatus('check', 'Verification complete', { duration: Date.now() - checkStart });
+      const checkResultText = state.hallucination === false ? 'passed' : 'failed';
+      controller.sendThinking('check', `Answer verification ${checkResultText}${state.retry_count > 0 ? ` (retry ${state.retry_count})` : ''}`);
 
       // Check if we need to retry
       if (state.hallucination === false) {
         // No hallucination, run quality check
-        controller.sendStatus('quality_check', '正在检测回答质量...');
+        controller.sendStatus('quality_check', 'Checking answer quality...');
         const qualityStart = Date.now();
         const qualityResult = await qualityCheckNode({ state, apiKey });
         state = { ...state, ...qualityResult };
@@ -293,13 +293,13 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
             issueCount: state.quality_issues.length,
             issueTypes: state.quality_issues.map(i => i.type)
           });
-          // 发送修复后的完整回答给客户端
+          // Send fixed complete answer to client
           if (state.fixed_answer) {
             controller.sendQualityCheck(true, state.quality_issues, state.fixed_answer);
           }
-          controller.sendStatus('quality_check', `检测到 ${state.quality_issues.length} 个问题，已自动修复`, { duration: qualityDuration });
+          controller.sendStatus('quality_check', `Detected ${state.quality_issues.length} issues, auto-fixed`, { duration: qualityDuration });
         } else {
-          controller.sendStatus('quality_check', '回答质量检测通过', { duration: qualityDuration });
+          controller.sendStatus('quality_check', 'Answer quality check passed', { duration: qualityDuration });
         }
 
         shouldRetry = false;
@@ -313,17 +313,17 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
           maxRetries: MAX_RETRIES
         });
 
-        // 发送重试事件，告诉客户端清除之前的内容
-        controller.sendRetry(retryIteration, '检测到幻觉内容，正在重新生成');
+        // Send retry event, tell client to clear previous content
+        controller.sendRetry(retryIteration, 'Hallucination detected, regenerating');
 
         state = { ...state, retry_count: retryIteration, answer: null };
         // Continue loop for retry
       } else {
         // Max retries reached, return insufficient data message
         shouldRetry = false;
-        finalAnswer = '抱歉，根据现有资料无法生成准确回答。';
-        // 清除之前的内容并发送最终消息
-        controller.sendRetry(retryIteration + 1, '验证未通过，显示最佳答案');
+        finalAnswer = 'Sorry, unable to generate an accurate answer based on available documents.';
+        // Clear previous content and send final message
+        controller.sendRetry(retryIteration + 1, 'Verification failed, showing best answer');
         controller.sendChunk(finalAnswer);
       }
     }
@@ -332,7 +332,7 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
     controller.sendDone();
 
     return {
-      answer: finalAnswer || '未能生成回答',
+      answer: finalAnswer || 'Failed to generate answer',
       sources: finalSources.length > 0 ? finalSources.map(s => ({
         filename: s.filename,
         page: s.page,
@@ -346,7 +346,7 @@ export async function runRAGStream(input: RunRAGStreamInput): Promise<RunRAGResu
       retryCount: retryIteration
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     controller.sendError(errorMessage, 'RAG_EXECUTION_ERROR');
     throw error;
   }

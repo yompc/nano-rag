@@ -1,6 +1,6 @@
 /**
- * 文档选择器节点
- * 使用 LLM 根据用户问题选择最相关的文档
+ * Document Selector Node
+ * Uses LLM to select the most relevant documents based on user question
  */
 
 import type { RAGState } from '../state';
@@ -8,16 +8,16 @@ import { CHAT_CONFIG } from '@/lib/model-config';
 import { getCachedAllDocs, getCachedDocKeywords } from '@/lib/db';
 import type { Doc, D1Database } from '@/lib/types';
 
-const SELECTOR_SYSTEM_PROMPT = `你是文档选择专家。分析用户问题，从候选文档列表中选择最相关的文档。
+const SELECTOR_SYSTEM_PROMPT = `You are a document selection expert. Analyze the user's question and select the most relevant documents from the candidate list.
 
-选择标准：
-1. 文档关键词与问题主题高度相关
-2. 文件名暗示文档内容可能与问题相关
-3. 如果关键词和文件名都不匹配，不要选择该文档
+Selection criteria:
+1. Document keywords are highly relevant to the question topic
+2. Filename suggests the document content might be related to the question
+3. If neither keywords nor filename match, do not select the document
 
-只返回文档 ID 的 JSON 数组，如 [1, 5, 10]。如果没有相关文档，返回 []。`;
+Only return a JSON array of document IDs, e.g., [1, 5, 10]. Return [] if no relevant documents.`;
 
-interface MistralChatResponse {
+interface OpenAIChatResponse {
   choices: Array<{
     message: {
       content: string;
@@ -39,12 +39,12 @@ function buildUserPrompt(
   const docList = docs
     .map((d) => {
       const keywords = keywordsMap.get(d.id) || [];
-      const keywordsStr = keywords.length > 0 ? keywords.join(', ') : '无';
-      return `- ID: ${d.id}, 文件名: ${d.filename}, 关键词: ${keywordsStr}`;
+      const keywordsStr = keywords.length > 0 ? keywords.join(', ') : 'None';
+      return `- ID: ${d.id}, Filename: ${d.filename}, Keywords: ${keywordsStr}`;
     })
     .join('\n');
 
-  return `候选文档：\n${docList}\n\n问题：${question}\n\n请根据文件名和关键词，选择可能包含答案的文档。返回相关文档 ID 的 JSON 数组，如 [1, 5, 10]。如果没有相关文档，返回 []。`;
+  return `Candidate documents:\n${docList}\n\nQuestion: ${question}\n\nSelect documents that may contain the answer based on filename and keywords. Return document IDs as a JSON array, e.g., [1, 5, 10]. Return [] if no relevant documents`;
 }
 
 async function selectDocsWithLLM(
@@ -82,13 +82,13 @@ async function selectDocsWithLLM(
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Mistral API ${response.status}: ${errorText}`);
+        throw new Error(`OpenAI API ${response.status}: ${errorText}`);
       }
 
-      const data = await response.json() as MistralChatResponse;
+      const data = await response.json() as OpenAIChatResponse;
 
       if (!data.choices || data.choices.length === 0) {
-        throw new Error('No response from Mistral API');
+        throw new Error('No response from OpenAI API');
       }
 
       const content = data.choices[0].message.content.trim();
@@ -97,7 +97,7 @@ async function selectDocsWithLLM(
         rawContent: content.substring(0, 200) // 限制日志长度
       });
 
-      // 尝试解析 JSON 数组
+      // Try to parse JSON array
       try {
         const docIds = JSON.parse(content);
 
@@ -105,19 +105,19 @@ async function selectDocsWithLLM(
           throw new Error('Response is not an array');
         }
 
-        // 验证并过滤有效的文档 ID
+        // Validate and filter valid document IDs
         const validDocIds = docIds
           .filter((id): id is number => typeof id === 'number' && Number.isInteger(id) && id > 0)
           .filter(id => docs.some(d => d.id === id)); // 确保 ID 在候选列表中
 
-        // 如果过滤后为空数组，返回 undefined 触发回退
+        // If filtered result is empty array, return undefined to trigger fallback
         if (validDocIds.length === 0) {
           return undefined;
         }
 
         return validDocIds;
       } catch {
-        // JSON 解析失败，尝试从文本中提取数字
+        // JSON parse failed, try to extract numbers from text
         const extractedIds = extractDocIdsFromText(content, docs);
         if (extractedIds.length === 0) {
           return undefined;
@@ -126,12 +126,12 @@ async function selectDocsWithLLM(
       }
     } catch (error) {
       if (attempt === maxRetries - 1) {
-        // 最后一次重试失败，返回 undefined
+        // Last retry failed, return undefined
         console.error('Document selection failed:', error);
         return undefined;
       }
 
-      // 简单退避
+      // Simple backoff
       const delay = 1000 * (attempt + 1);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -141,34 +141,34 @@ async function selectDocsWithLLM(
 }
 
 /**
- * 从文本内容中提取文档 ID（备用方案）
- * @param content - LLM 返回的文本
- * @param docs - 候选文档列表（用于验证 ID 有效性）
- * @returns 有效的文档 ID 数组
+ * Extract document IDs from text content (fallback)
+ * @param content - Text returned by LLM
+ * @param docs - Candidate document list (for validating ID validity)
+ * @returns Array of valid document IDs
  */
 function extractDocIdsFromText(content: string, docs: Doc[]): number[] {
-  // 匹配数字（包括方括号内的）
+  // Match numbers (including those in square brackets)
   const numberPattern = /\b\d+\b/g;
   const matches = content.matchAll(numberPattern);
   const validDocIds: number[] = [];
 
   for (const match of matches) {
     const id = parseInt(match[0], 10);
-    // 验证 ID 是正整数且在候选列表中
+    // Validate ID is positive integer and in candidate list
     if (id > 0 && docs.some(d => d.id === id)) {
       validDocIds.push(id);
     }
   }
 
-  // 去重
+  // Deduplicate
   return [...new Set(validDocIds)];
 }
 
 /**
- * 文档选择器节点
- * 根据用户问题从所有文档中选择最相关的文档
- * @param input - 包含 state, apiKey 和 db 的输入
- * @returns 包含 selected_doc_ids 的状态更新
+ * Document Selector Node
+ * Selects the most relevant documents from all documents based on user question
+ * @param input - Input containing state, apiKey and db
+ * @returns State update containing selected_doc_ids
  */
 export async function documentSelectorNode(
   input: DocumentSelectorInput
@@ -177,16 +177,16 @@ export async function documentSelectorNode(
   const startTime = Date.now();
 
   try {
-    // 获取所有文档
+    // Get all documents
     const allDocs = await getCachedAllDocs(db);
 
-    // 如果没有文档，返回 undefined
+    // If no documents, return undefined
     if (allDocs.length === 0) {
       console.log('[Document Selector]', { status: 'no_documents', totalDocs: 0 });
       return { selected_doc_ids: undefined };
     }
 
-    // 限制候选集大小为 50
+    // Limit candidate set size to 50
     const candidateDocs = allDocs.slice(0, 50);
     console.log('[Document Selector]', {
       status: 'candidates_prepared',
@@ -214,7 +214,7 @@ export async function documentSelectorNode(
 
     return { selected_doc_ids: selectedIds };
   } catch (error) {
-    // 捕获任何异常，返回 undefined 触发回退
+    // Catch any exception, return undefined to trigger fallback
     console.error('Document selector node error:', error);
     return { selected_doc_ids: undefined };
   }

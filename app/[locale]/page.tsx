@@ -3,13 +3,15 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ChatMessage, type Message } from '@/components/chat-message';
 import { type ThinkingStep } from '@/components/thinking-process';
 import { DocumentSidebar } from '@/components/document-sidebar';
 import { SessionSidebar } from '@/components/session-sidebar';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { useSessions } from '@/hooks/use-sessions';
 import { useMessagesHeights } from '@/hooks/use-message-height';
-import { STEP_MAP } from '@/lib/constants';
+import { STEP_METADATA } from '@/lib/constants';
 import type { LocalMessage } from '@/lib/session-storage';
 
 function convertLocalToMessage(messages: LocalMessage[]): Message[] {
@@ -24,6 +26,9 @@ function convertLocalToMessage(messages: LocalMessage[]): Message[] {
 }
 
 export default function HomePage() {
+  const t = useTranslations('home');
+  const tCommon = useTranslations('common');
+  const tNav = useTranslations('nav');
   const {
     sessions,
     currentSessionId,
@@ -62,16 +67,13 @@ export default function HomePage() {
     setMessages([]);
   }, [createNewSession]);
 
-  // 删除会话并清空消息
   const handleDeleteSession = useCallback((sessionId: string) => {
     deleteSessionById(sessionId);
-    // 如果删除的是当前会话，清空消息
     if (currentSessionId === sessionId) {
       setMessages([]);
     }
   }, [deleteSessionById, currentSessionId]);
 
-  // 初始化：客户端 hydration 后读取 localStorage
   useEffect(() => {
     if (!isHydrated) {
       setMessages(convertLocalToMessage(currentMessages));
@@ -79,7 +81,6 @@ export default function HomePage() {
     }
   }, [isHydrated, currentMessages]);
 
-  // 文档库气泡提示 - 首次进入时显示10秒
   useEffect(() => {
     if (isHydrated) {
       const hasSeenBubble = localStorage.getItem('hasSeenLibraryBubble');
@@ -94,10 +95,8 @@ export default function HomePage() {
     }
   }, [isHydrated]);
 
-  // 消息变化时保存到 localStorage
   useEffect(() => {
     if (messages.length > 0 && !sessionsLoading && isHydrated) {
-      // 将 Message 转换为 LocalMessage
       const localMessages: LocalMessage[] = messages.map((msg) => ({
         id: msg.id,
         role: msg.role,
@@ -131,13 +130,13 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!containerRef.current) return;
-    
+
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         setContainerWidth(entry.contentRect.width - 64);
       }
     });
-    
+
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
@@ -177,7 +176,6 @@ export default function HomePage() {
     setInput('');
     setLoading(true);
     setTimeout(() => inputRef.current?.focus(), 0);
-    console.log('[Chat] Loading set to true', { question: userMessage.content });
     setThinkingSteps([]);
     thinkingStepsRef.current = [];
 
@@ -187,7 +185,6 @@ export default function HomePage() {
     let streamingContent = '';
 
     try {
-      // 准备历史消息用于上下文
       const historyMessages = messages.slice(-6).map((msg) => ({
         role: msg.role,
         content: msg.content,
@@ -216,11 +213,7 @@ export default function HomePage() {
 
       while (true) {
         const { done, value } = await reader.read();
-        console.log('[Chat] Stream read', { done, hasValue: !!value });
-        if (done) {
-          console.log('[Chat] Stream done');
-          break;
-        }
+        if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
@@ -237,21 +230,21 @@ export default function HomePage() {
 
               switch (currentEvent) {
                 case 'status': {
-                  const stepInfo = STEP_MAP[data.step];
-                  if (stepInfo) {
+                  const stepMeta = STEP_METADATA[data.step];
+                  if (stepMeta) {
                     setThinkingSteps((prev) => {
-                      const existing = prev.find(s => s.id === stepInfo.id);
+                      const existing = prev.find(s => s.id === stepMeta.id);
                       let newSteps: ThinkingStep[];
                       if (existing) {
                         newSteps = prev.map(s =>
-                          s.id === stepInfo.id
+                          s.id === stepMeta.id
                             ? { ...s, status: 'completed', duration: data.metadata?.duration }
                             : s
                         );
                       } else {
                         newSteps = [...prev, {
-                          id: stepInfo.id,
-                          name: stepInfo.name,
+                          id: stepMeta.id,
+                          name: stepMeta.id,
                           description: data.message,
                           status: 'active',
                           metadata: data.metadata,
@@ -303,8 +296,8 @@ export default function HomePage() {
                       ...prev,
                       {
                         id: `retry-${retryCount}`,
-                        name: `重新生成 (第${retryCount}次)`,
-                        description: data.reason || '检测到问题，正在重新生成',
+                        name: 'retry',
+                        description: data.reason || 'retry reason',
                         status: 'active' as const,
                       },
                     ];
@@ -317,7 +310,6 @@ export default function HomePage() {
                 case 'thinking': {
                   const { step, content, metadata } = data;
                   if (!step) break;
-                  const stepInfo = STEP_MAP[step];
                   setThinkingSteps((prev) => {
                     const existingIndex = prev.findIndex(s => s.id === step);
                     if (existingIndex >= 0) {
@@ -337,7 +329,7 @@ export default function HomePage() {
                     }
                     const newSteps = [...prev, {
                       id: step,
-                      name: stepInfo?.name || step,
+                      name: step,
                       description: content,
                       metadata: {
                         originalQuery: metadata?.query,
@@ -364,14 +356,10 @@ export default function HomePage() {
                 }
 
                 case 'done': {
-                  console.log('[Chat] Received done event', { 
-                    timestamp: new Date().toISOString(),
-                    data 
-                  });
                   setMessages((prev) => [
                     ...prev,
                     {
-                      id: streamingMessageId!,
+                      id: assistantMessageId!,
                       role: 'assistant',
                       content: streamingContent,
                       timestamp: new Date(),
@@ -386,7 +374,6 @@ export default function HomePage() {
                     return completedSteps;
                   });
                   setLoading(false);
-                  console.log('[Chat] Loading set to false after done event');
                   break;
                 }
               }
@@ -401,7 +388,7 @@ export default function HomePage() {
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: error instanceof Error ? error.message : '发生错误，请重试',
+        content: error instanceof Error ? error.message : tCommon('error'),
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -410,7 +397,6 @@ export default function HomePage() {
       );
     } finally {
       setLoading(false);
-      console.log('[Chat] Loading set to false in finally block');
       const completedSteps = thinkingStepsRef.current.map(s => ({ ...s, status: 'completed' as const }));
       setMessages((prev) => {
         const lastMsg = prev[prev.length - 1];
@@ -453,7 +439,7 @@ export default function HomePage() {
               type="button"
               onClick={() => setHistorySidebarOpen(true)}
               className="md:hidden p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors"
-              aria-label="打开历史记录"
+              aria-label={t('openHistory')}
             >
               <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -463,10 +449,17 @@ export default function HomePage() {
             <span className="font-display font-semibold text-base md:text-lg text-[var(--ink)]">Nano RAG</span>
           </div>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <Link
+              href="/landing"
+              className="hidden sm:inline text-sm text-[var(--primary)] hover:underline px-2"
+            >
+              {tNav('learnMore')}
+            </Link>
             <Link
               href="/upload"
               className="p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors"
-              aria-label="上传文档"
+              aria-label={tNav('uploadDoc')}
             >
               <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -476,14 +469,14 @@ export default function HomePage() {
               type="button"
               onClick={() => setSidebarOpen(true)}
               className="p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors relative"
-              aria-label="打开文档库"
+              aria-label={tNav('docLibrary')}
             >
               <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
               {showLibraryBubble && (
                 <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[var(--ink)] text-white text-sm px-3 py-1.5 rounded-lg shadow-lg animate-bounce-in">
-                  文档库
+                  {tNav('docLibrary')}
                   <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--ink)] rotate-45" />
                 </span>
               )}
@@ -497,10 +490,10 @@ export default function HomePage() {
               <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] px-4">
                 <img src="/logo.svg" alt="Nano RAG" className="w-16 h-16 mb-6" />
                 <h1 className="text-xl md:text-2xl font-semibold text-[var(--ink)] mb-2">
-                  有什么可以帮你的？
+                  {t('title')}
                 </h1>
                 <p className="text-sm text-[var(--muted-soft)] mb-8">
-                  基于文档的智能问答系统
+                  {t('subtitle')}
                 </p>
 
                 <div className="w-full max-w-2xl">
@@ -510,7 +503,7 @@ export default function HomePage() {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder="输入你的问题..."
+                      placeholder={t('placeholder')}
                       rows={3}
                       className="input-textarea w-full px-6 py-4 pr-14 rounded-3xl"
                     />
@@ -519,7 +512,7 @@ export default function HomePage() {
                       onClick={sendStreamingMessage}
                       disabled={loading || !input.trim()}
                       className="btn-primary absolute right-3 bottom-3 w-10 h-10 !p-0 rounded-full flex items-center justify-center transition-transform duration-150 hover:scale-105 active:scale-95"
-                      aria-label="发送"
+                      aria-label={tCommon('submit')}
                     >
                       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -527,7 +520,7 @@ export default function HomePage() {
                     </button>
                   </div>
                   <p className="text-xs text-center text-[var(--muted-soft)] mt-3">
-                    按 Enter 发送，Shift + Enter 换行
+                    {t('sendHint')}
                   </p>
                 </div>
               </div>
@@ -535,15 +528,15 @@ export default function HomePage() {
               <div className="px-4 py-6">
                 <AnimatePresence>
                   {displayMessages.map((message, index) => {
-                    const isCurrentStreaming = loading && 
-                      index === displayMessages.length - 1 && 
+                    const isCurrentStreaming = loading &&
+                      index === displayMessages.length - 1 &&
                       message.role === 'assistant' &&
                       message.id === streamingMessageId;
-                    
+
                     const height = messageHeights.get(message.id);
-                    
+
                     return (
-                      <div 
+                      <div
                         key={message.id || `message-${index}`}
                         style={{ minHeight: height || undefined }}
                       >
@@ -563,7 +556,7 @@ export default function HomePage() {
                         <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse animation-delay-400" />
                       </div>
                       <span className="text-sm text-[var(--muted-soft)]">
-                        AI 正在思考...
+                        {t('thinking')}
                       </span>
                     </div>
                   )}
@@ -585,7 +578,7 @@ export default function HomePage() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={loading ? "AI 正在思考..." : "输入你的问题..."}
+                    placeholder={loading ? t('thinking') : t('placeholder')}
                     rows={1}
                     className="input-textarea w-full px-5 py-3 rounded-[24px]"
                   />
@@ -595,7 +588,7 @@ export default function HomePage() {
                   onClick={sendStreamingMessage}
                   disabled={loading || !input.trim()}
                   className="btn-primary !p-3 rounded-[24px] flex-shrink-0 flex items-center justify-center transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
-                  aria-label="发送"
+                  aria-label={tCommon('submit')}
                 >
                   <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -603,7 +596,7 @@ export default function HomePage() {
                 </button>
               </div>
               <p className="text-xs text-center text-[var(--muted-soft)] mt-2">
-                按 Enter 发送，Shift + Enter 换行
+                {t('sendHint')}
               </p>
             </div>
           </div>

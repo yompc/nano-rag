@@ -1,138 +1,138 @@
-# Nano-RAG 部署指南
+# Nano-RAG Deployment Guide
 
-## 环境要求
+## Requirements
 
-- Node.js 22.13+ 或更高版本
-- Cloudflare 账户
-- Wrangler CLI (已包含在依赖中，通过 `npx wrangler` 使用)
-- Mistral API Key
+- Node.js 22.13+ or higher
+- Cloudflare account
+- Wrangler CLI (included in dependencies, use via `npx wrangler`)
+- OpenAI API Key
 
-## 1. 本地开发环境设置
+## 1. Local Development Setup
 
-### 1.1 安装依赖
+### 1.1 Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 1.2 配置环境变量
+### 1.2 Configure Environment Variables
 
-复制 `.dev.vars.example` 为 `.dev.vars`：
+Copy `.dev.vars.example` to `.dev.vars`:
 
 ```bash
 cp .dev.vars.example .dev.vars
 ```
 
-编辑 `.dev.vars` 文件，填入真实的 Mistral API Key：
+Edit `.dev.vars` file, fill in your actual OpenAI API Key:
 
 ```
-MISTRAL_API_KEY=your-mistral-api-key-here
+OPENAI_API_KEY=your-openai-api-key-here
 ```
 
-### 1.3 初始化本地数据库
+### 1.3 Initialize Local Database
 
-本地开发使用 D1 的 local 模式，数据库文件存储在 `.wrangler/state/` 目录：
+Local development uses D1's local mode, database files are stored in `.wrangler/state/` directory:
 
 ```bash
-# 执行数据库迁移（本地模式）
+# Execute database migration (local mode)
 npx wrangler d1 execute nano-rag-db --local --file=./migrations/0001_init.sql
 ```
 
-注意：本地开发不需要创建远程数据库，`wrangler.toml` 中已配置 `database_id = "local"`。
+Note: Local development doesn't require creating a remote database, `wrangler.toml` is already configured with `database_id = "local"`.
 
-### 1.4 本地预览测试
+### 1.4 Local Preview Test
 
-使用 Cloudflare Workers 本地运行时测试（推荐）：
+Test using Cloudflare Workers local runtime (recommended):
 
 ```bash
 npm run preview
 ```
 
-访问 http://localhost:8787
+Visit http://localhost:8787
 
-### 1.5 纯开发模式（可选）
+### 1.5 Pure Development Mode (Optional)
 
-如果只需要快速开发 UI，可以用纯 Next.js dev 模式：
+If you only need to quickly develop UI, you can use pure Next.js dev mode:
 
 ```bash
 npm run dev
 ```
 
-访问 http://localhost:3000
+Visit http://localhost:3000
 
-注意：此模式下 D1 数据库不可用，API 路由会报错。
+Note: D1 database is not available in this mode, API routes will error.
 
-## 2. 生产环境部署
+## 2. Production Deployment
 
-### 2.1 创建 Cloudflare D1 数据库
+### 2.1 Create Cloudflare D1 Database
 
 ```bash
-# 创建生产数据库
+# Create production database
 npx wrangler d1 create nano-rag-production-db
 
-# 记录返回的 database_id，格式类似：xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+# Record the returned database_id, format like: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-### 2.2 配置 wrangler.toml
+### 2.2 Configure wrangler.toml
 
-编辑 `wrangler.toml`，更新生产环境的 database_id：
+Edit `wrangler.toml`, update the production database_id:
 
 ```toml
 [[d1_databases]]
 binding = "DB"
 database_name = "nano-rag-db"
-database_id = "local"  # 本地开发
+database_id = "local"  # Local development
 
 [env.production]
 name = "nano-rag-production"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "nano-rag-production-db"
-database_id = "your-production-database-id"  # 替换为步骤 2.1 返回的 ID
+database_id = "your-production-database-id"  # Replace with ID from step 2.1
 ```
 
-### 2.3 执行生产数据库迁移
+### 2.3 Execute Production Database Migration
 
 ```bash
 npx wrangler d1 execute nano-rag-production-db --remote --file=./migrations/0001_init.sql
 ```
 
-### 2.4 配置生产环境变量
+### 2.4 Configure Production Environment Variables
 
-生产环境的敏感信息需要通过 Wrangler secrets 设置：
+Production secrets must be set via Wrangler secrets:
 
 ```bash
-# 设置 Mistral/OpenAI API Key
+# Set OpenAI API Key
 npx wrangler secret put OPENAI_API_KEY
-# 按提示输入 API Key
+# Enter API Key when prompted
 
-# 设置管理员密码（用于访问管理界面和受保护的 API）
+# Set admin password (for accessing admin interface and protected APIs)
 npx wrangler secret put ADMIN_PASSWORD
-# 按提示输入管理员密码
+# Enter admin password when prompted
 ```
 
-**重要提示**：
-- 密码和 API Key 等敏感信息不要硬编码在代码或配置文件中
-- 使用 `wrangler secret list` 查看已配置的 secrets
-- Secrets 在 Cloudflare Dashboard 的 Workers > Settings > Variables 中管理
+**Important Notes**:
+- Don't hardcode passwords and API keys in code or config files
+- Use `wrangler secret list` to view configured secrets
+- Secrets are managed in Cloudflare Dashboard > Workers > Settings > Variables
 
-### 2.5 部署应用
+### 2.5 Deploy Application
 
 ```bash
 npm run deploy
 ```
 
-部署成功后，会输出生产环境 URL。
+After successful deployment, the production URL will be output.
 
-## 3. Staging 环境部署
+## 3. Staging Environment Deployment
 
-### 3.1 创建 Staging 数据库
+### 3.1 Create Staging Database
 
 ```bash
 npx wrangler d1 create nano-rag-staging-db
 ```
 
-### 3.2 更新 wrangler.toml
+### 3.2 Update wrangler.toml
 
 ```toml
 [env.staging]
@@ -143,23 +143,23 @@ database_name = "nano-rag-staging-db"
 database_id = "your-staging-database-id"
 ```
 
-### 3.3 配置 Staging 环境变量
+### 3.3 Configure Staging Environment Variables
 
 ```bash
-npx wrangler secret put MISTRAL_API_KEY --env staging
+npx wrangler secret put OPENAI_API_KEY --env staging
 ```
 
-### 3.4 部署到 Staging
+### 3.4 Deploy to Staging
 
 ```bash
 npx wrangler deploy --env staging
 ```
 
-## 4. 数据导入
+## 4. Data Import
 
-### 4.1 上传 PDF 文档
+### 4.1 Upload PDF Documents
 
-使用应用界面的文档上传功能，或通过 API：
+Use the application's document upload feature, or via API:
 
 ```bash
 curl -X POST https://your-app.workers.dev/api/upload \
@@ -168,105 +168,105 @@ curl -X POST https://your-app.workers.dev/api/upload \
   -F "docType=paper"
 ```
 
-### 4.2 验证数据导入
+### 4.2 Verify Data Import
 
-查询数据库验证：
+Query database to verify:
 
 ```bash
 npx wrangler d1 execute nano-rag-production-db --remote \
   --command "SELECT COUNT(*) FROM chunks"
 ```
 
-## 5. 监控和日志
+## 5. Monitoring and Logs
 
-### 5.1 查看实时日志
+### 5.1 View Real-time Logs
 
 ```bash
 npx wrangler tail
 ```
 
-### 5.2 查看 D1 数据库指标
+### 5.2 View D1 Database Metrics
 
-在 Cloudflare Dashboard 中：
+In Cloudflare Dashboard:
 - Workers & Pages > nano-rag-production > Metrics
 
-## 6. 常见问题
+## 6. Common Issues
 
-### Q: 部署失败，提示 database_id 错误
-A: 确保 `wrangler.toml` 中的 database_id 是正确的生产数据库 ID
+### Q: Deployment fails with database_id error
+A: Ensure `wrangler.toml` has the correct production database ID
 
-### Q: API 返回 "MISTRAL_API_KEY未配置"
-A: 检查环境变量是否正确设置：
+### Q: API returns "OPENAI_API_KEY not configured"
+A: Check if environment variables are correctly set:
 ```bash
 npx wrangler secret list
 ```
 
-### Q: 本地预览时数据库连接失败
-A: 确保：
-1. `.dev.vars` 文件存在且配置正确
-2. 本地数据库已执行迁移：`npx wrangler d1 execute nano-rag-db --local --file=./migrations/0001_init.sql`
+### Q: Database connection fails during local preview
+A: Ensure:
+1. `.dev.vars` file exists and is correctly configured
+2. Local database migration has been executed: `npx wrangler d1 execute nano-rag-db --local --file=./migrations/0001_init.sql`
 
-### Q: 向量检索结果为空
-A: 检查：
-1. 数据库中是否有数据
-2. Mistral API Key 是否有效
-3. Embedding 是否正常生成
+### Q: Vector retrieval results are empty
+A: Check:
+1. If database has data
+2. If OpenAI API Key is valid
+3. If embeddings are generated normally
 
-### Q: 页面返回 404
-A: 确保 `wrangler.toml` 中有 `[assets]` 配置：
+### Q: Page returns 404
+A: Ensure `wrangler.toml` has `[assets]` configuration:
 ```toml
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"
 ```
 
-## 7. 回滚
+## 7. Rollback
 
-如果部署出现问题，可以回滚到之前的版本：
+If deployment has issues, you can rollback to a previous version:
 
 ```bash
-# 查看部署历史
+# View deployment history
 npx wrangler deployments list
 
-# 回滚到指定版本
+# Rollback to specified version
 npx wrangler rollback --version <version-id>
 ```
 
-## 8. 安全建议
+## 8. Security Recommendations
 
-1. **API Key 管理**
-   - 使用 Wrangler secrets 存储敏感信息
-   - 定期轮换 API Key
-   - 不要在代码中硬编码密钥
+1. **API Key Management**
+   - Use Wrangler secrets to store sensitive information
+   - Regularly rotate API keys
+   - Don't hardcode keys in code
 
-2. **访问控制**
-   - 考虑添加身份验证
-   - 限制 API 调用频率
-   - 监控异常访问
+2. **Access Control**
+   - Consider adding authentication
+   - Limit API call frequency
+   - Monitor abnormal access
 
-3. **数据安全**
-   - 定期备份 D1 数据库
-   - 实施数据保留策略
+3. **Data Security**
+   - Regularly backup D1 database
+   - Implement data retention policies
 
-## 9. 性能优化
+## 9. Performance Optimization
 
-1. **数据库优化**
-   - 定期清理过期数据
-   - 监控查询性能
+1. **Database Optimization**
+   - Regularly clean expired data
+   - Monitor query performance
 
-2. **缓存策略**
-   - 使用 Cloudflare Cache API
-   - 考虑缓存常用查询结果
+2. **Caching Strategy**
+   - Use Cloudflare Cache API
+   - Consider caching common query results
 
-3. **资源限制**
-   - 监控 Worker CPU 和内存使用
-   - Worker 内存上限：免费 128MB，付费 2GB
-   - 包大小上限：免费 1MB，付费 10MB（压缩后）
+3. **Resource Limits**
+   - Monitor Worker CPU and memory usage
+   - Worker memory limit: Free 128MB, Paid 2GB
+   - Package size limit: Free 1MB, Paid 10MB (compressed)
 
-## 10. 相关链接
+## 10. Related Links
 
-- [Cloudflare Workers 文档](https://developers.cloudflare.com/workers/)
-- [Cloudflare D1 文档](https://developers.cloudflare.com/d1/)
-- [OpenNext Cloudflare 文档](https://opennext.js.org/cloudflare)
-- [Next.js 文档](https://nextjs.org/docs)
-- [Mistral AI API 文档](https://docs.mistral.ai/)
+- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
+- [Cloudflare D1 Documentation](https://developers.cloudflare.com/d1/)
+- [OpenNext Cloudflare Documentation](https://opennext.js.org/cloudflare)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [OpenAI API Documentation](https://platform.openai.com/docs/)

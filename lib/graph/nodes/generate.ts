@@ -1,6 +1,6 @@
 /**
- * 生成节点
- * 使用 LLM 生成带来源标注的回答
+ * Generate Node
+ * Uses LLM to generate answer with source citations
  */
 
 import type { RAGState, Message } from '../state';
@@ -9,11 +9,11 @@ import { CHAT_CONFIG } from '@/lib/model-config';
 import { SYSTEM_PROMPT } from '@/lib/prompts';
 
 /**
- * 截断历史消息，防止超出上下文窗口
- * @param messages - 原始消息数组
- * @param maxPerMessage - 单条消息最大字符数
- * @param maxCount - 最大消息数量
- * @returns 截断后的消息数组
+ * Truncate history messages to prevent exceeding context window
+ * @param messages - Original message array
+ * @param maxPerMessage - Max characters per message
+ * @param maxCount - Max message count
+ * @returns Truncated message array
  */
 function truncateMessages(
   messages: Message[], 
@@ -26,7 +26,7 @@ function truncateMessages(
   }));
 }
 
-interface MistralChatResponse {
+interface OpenAIChatResponse {
   choices: Array<{
     message: {
       content: string;
@@ -46,9 +46,9 @@ interface GenerateStreamNodeInput {
 }
 
 /**
- * 生成节点 - 基于检索到的chunks生成回答
- * @param input - 包含状态和API密钥的输入
- * @returns 包含answer的状态更新
+ * Generate Node - Generate answer based on retrieved chunks
+ * @param input - Input containing state and API key
+ * @returns State update containing answer
  */
 export async function generateNode(
   input: GenerateNodeInput
@@ -57,8 +57,8 @@ export async function generateNode(
   const { question, top_chunks } = state;
   
   if (top_chunks.length === 0) {
-    return { 
-      answer: '抱歉，没有找到相关的文档内容。请确保已上传相关文档。' 
+    return {
+      answer: 'Sorry, no relevant documents found. Please ensure documents have been uploaded.'
     };
   }
   
@@ -66,9 +66,9 @@ export async function generateNode(
     const answer = await generateAnswer({ question, chunks: top_chunks, apiKey, messages: state.messages });
     return { answer };
   } catch (error) {
-    console.error('生成回答失败:', error);
-    return { 
-      answer: '生成回答时出现错误，请稍后重试。' 
+    console.error('Failed to generate answer:', error);
+    return {
+      answer: 'Error generating answer. Please try again later.'
     };
   }
 }
@@ -88,7 +88,7 @@ interface GenerateStreamInput {
   messages?: Message[];
 }
 
-interface MistralStreamResponse {
+interface OpenAIStreamResponse {
   choices: Array<{
     delta: {
       content?: string;
@@ -97,22 +97,22 @@ interface MistralStreamResponse {
 }
 
 /**
- * 使用Mistral LLM生成回答
- * @param input - 包含问题、chunks和API密钥的输入
- * @returns 生成的回答
+ * Generate answer using OpenAI LLM
+ * @param input - Input containing question, chunks and API key
+ * @returns Generated answer
  */
 async function generateAnswer(input: GenerateAnswerInput): Promise<string> {
   const { question, chunks, apiKey, messages } = input;
   
   const context = chunks
-    .map(c => `[${c.filename} 第${c.page}页] ${c.content}`)
+    .map(c => `[${c.filename} Page ${c.page}] ${c.content}`)
     .join('\n\n');
-  
+
   const truncatedHistory = messages ? truncateMessages(messages) : [];
   const messagesArray = [
     { role: 'system' as const, content: SYSTEM_PROMPT },
     ...truncatedHistory.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-    { role: 'user' as const, content: `基于以下文档片段回答我的问题：\n\n${context}\n\n我的问题：${question}` }
+    { role: 'user' as const, content: `Based on the following document fragments, answer my question:\n\n${context}\n\nMy question: ${question}` }
   ];
   
   const controller = new AbortController();
@@ -139,14 +139,14 @@ async function generateAnswer(input: GenerateAnswerInput): Promise<string> {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Generate] Mistral API error:', response.status, errorText);
-      throw new Error(`Mistral API ${response.status}: ${errorText}`);
+      console.error('[Generate] OpenAI API error:', response.status, errorText);
+      throw new Error(`OpenAI API ${response.status}: ${errorText}`);
     }
     
-    const data = await response.json() as MistralChatResponse;
+    const data = await response.json() as OpenAIChatResponse;
     
     if (!data.choices || data.choices.length === 0) {
-      throw new Error('No response from Mistral');
+      throw new Error('No response from OpenAI');
     }
     
     return data.choices[0].message.content;
@@ -157,22 +157,22 @@ async function generateAnswer(input: GenerateAnswerInput): Promise<string> {
 }
 
 /**
- * 流式生成回答 - 使用 Mistral stream 模式
- * @param input - 包含问题、chunks、API密钥和回调的输入
- * @returns 完整生成的回答
+ * Stream generate answer - Using OpenAI stream mode
+ * @param input - Input containing question, chunks, API key and callback
+ * @returns Complete generated answer
  */
 async function generateStream(input: GenerateStreamInput): Promise<string> {
   const { question, chunks, apiKey, onChunk, messages } = input;
 
   const context = chunks
-    .map(c => `[${c.filename} 第${c.page}页] ${c.content}`)
+    .map(c => `[${c.filename} Page ${c.page}] ${c.content}`)
     .join('\n\n');
 
   const truncatedHistory = messages ? truncateMessages(messages) : [];
   const messagesArray = [
     { role: 'system' as const, content: SYSTEM_PROMPT },
     ...truncatedHistory.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-    { role: 'user' as const, content: `基于以下文档片段回答我的问题：\n\n${context}\n\n我的问题：${question}` }
+    { role: 'user' as const, content: `Based on the following document fragments, answer my question:\n\n${context}\n\nMy question: ${question}` }
   ];
 
   const response = await fetch(CHAT_CONFIG.endpoint, {
@@ -191,7 +191,7 @@ async function generateStream(input: GenerateStreamInput): Promise<string> {
   });
 
   if (!response.ok) {
-    throw new Error(`Mistral API ${response.status}`);
+    throw new Error(`OpenAI API ${response.status}`);
   }
 
   const reader = response.body!.getReader();
@@ -215,7 +215,7 @@ async function generateStream(input: GenerateStreamInput): Promise<string> {
         if (data === '[DONE]') continue;
 
         try {
-          const parsed = JSON.parse(data) as MistralStreamResponse;
+          const parsed = JSON.parse(data) as OpenAIStreamResponse;
           const content = parsed.choices?.[0]?.delta?.content;
           if (content) {
             chunkCount++;
@@ -241,7 +241,7 @@ export async function generateStreamNode(
   const { question, top_chunks } = state;
 
   if (top_chunks.length === 0) {
-    const noDocAnswer = '抱歉，没有找到相关的文档内容。请确保已上传相关文档。';
+    const noDocAnswer = 'Sorry, no relevant documents found. Please ensure documents have been uploaded.';
     onChunk(noDocAnswer);
     return {
       answer: noDocAnswer
@@ -255,7 +255,7 @@ export async function generateStreamNode(
     return { answer };
   } catch (error) {
     console.error('[Generate] Stream generation failed:', error);
-    const fallbackAnswer = '生成回答时出现错误，请稍后重试。';
+    const fallbackAnswer = 'Error generating answer. Please try again later.';
     return { answer: fallbackAnswer };
   }
 }

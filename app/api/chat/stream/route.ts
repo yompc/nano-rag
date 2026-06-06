@@ -16,17 +16,17 @@ export async function POST(request: NextRequest) {
     const { env } = (await getCloudflareContext({ async: true })) as unknown as { env: Env };
     
     if (!env.DB) {
-      return new Response('数据库未绑定', {
+      return new Response('Database not bound', {
         status: 500,
         headers: { 'Content-Type': 'text/plain' }
       });
     }
-    
+
     const body = await request.json();
     const { question, messages: historyMessages } = body;
 
     if (!question || typeof question !== 'string') {
-      return new Response('问题不能为空', {
+      return new Response('Question cannot be empty', {
         status: 400,
         headers: { 'Content-Type': 'text/plain' }
       });
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     const apiKey = env.OPENAI_API_KEY || process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return new Response('API密钥未配置', {
+      return new Response('API key not configured', {
         status: 500,
         headers: { 'Content-Type': 'text/plain' }
       });
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const encoder = new TextEncoder();
     const db = env.DB;
 
-    // 使用前端传入的历史消息（从 localStorage 获取）
+    // Use history messages from frontend (retrieved from localStorage)
     const recentMessages = historyMessages || [];
     
     const stream = new ReadableStream({
@@ -85,10 +85,10 @@ export async function POST(request: NextRequest) {
             controller: streamController
           });
 
-          // 显式关闭流
+          // Explicitly close stream
           controller.close();
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : '处理请求时出错';
+          const errorMessage = error instanceof Error ? error.message : 'Error processing request';
           const errorEvent = encoder.encode(
             encodeEvent('error', { message: errorMessage })
           );
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Chat Stream API error:', error);
     return new Response(
-      `event: error\ndata: {"message":"${error instanceof Error ? error.message : '处理请求时出错'}"}\n\n`,
+      `event: error\ndata: {"message":"${error instanceof Error ? error.message : 'Error processing request'}"}\n\n`,
       {
         status: 500,
         headers: {

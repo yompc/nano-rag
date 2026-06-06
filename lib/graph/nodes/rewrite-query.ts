@@ -1,22 +1,22 @@
 /**
- * 查询改写节点
- * 使用 LLM 改写查询，处理指代消解
+ * Query Rewrite Node
+ * Uses LLM to rewrite queries, handling coreference resolution
  */
 
 import type { RAGState } from '../state';
 import { CHAT_CONFIG } from '@/lib/model-config';
 
-const REWRITE_SYSTEM_PROMPT = `你是一个查询改写专家。
-请根据对话历史（如果有），将用户的当前问题改写为一个独立、完整的查询。
-改写规则：
-1. 如果有对话历史，将指代消解为具体实体（如"它"、"这个"等指代物）
-2. 保持问题的核心意图不变
-3. 使改写后的问题不依赖于之前的上下文也能被理解
-4. 如果没有需要消解的指代，直接返回原问题
+const REWRITE_SYSTEM_PROMPT = `You are a query rewriting expert.
+Rewrite the user's current question into a standalone, complete query based on conversation history (if any).
+Rewriting rules:
+1. Resolve references to specific entities from conversation history (e.g., "it", "this", "that")
+2. Maintain the core intent of the question
+3. Ensure the rewritten question can be understood without previous context
+4. Return the original question if no reference resolution is needed
 
-只返回改写后的问题，不要添加任何解释。`;
+Only return the rewritten question without any explanation`;
 
-interface MistralChatResponse {
+interface OpenAIChatResponse {
   choices: Array<{
     message: {
       content: string;
@@ -31,45 +31,45 @@ interface RewriteQueryInput {
 }
 
 /**
- * 查询改写节点
- * @param state - 当前状态
- * @param apiKey - Mistral API密钥
- * @returns 包含rewritten_question的状态更新
+ * Query rewrite node
+ * @param state - Current state
+ * @param apiKey - OpenAI API key
+ * @returns State update containing rewritten_question
  */
 export async function rewriteQueryNode(
   state: RAGState,
   apiKey: string
 ): Promise<Partial<RAGState>> {
   const { question, messages } = state;
-  
+
   try {
     const rewritten = await rewriteQuery({ question, messages, apiKey });
     return { rewritten_question: rewritten };
   } catch (error) {
-    console.error('查询改写失败:', error);
-    // 如果改写失败，使用原问题
+    console.error('Query rewrite failed:', error);
+    // Fall back to original question if rewrite fails
     return { rewritten_question: question };
   }
 }
 
 /**
- * 使用Mistral LLM改写查询
- * @param input - 包含问题、消息历史和API密钥的输入
- * @returns 改写后的问题
+ * Rewrite query using OpenAI LLM
+ * @param input - Input containing question, message history, and API key
+ * @returns Rewritten question
  */
 export async function rewriteQuery(input: RewriteQueryInput): Promise<string> {
   const { question, messages, apiKey } = input;
-  
-  // 构建对话历史提示
+
+  // Build conversation history prompt
   let historyPrompt = '';
   if (messages.length > 0) {
-    const recentMessages = messages.slice(-6); // 只取最近6条
-    historyPrompt = '对话历史：\n' + 
-      recentMessages.map(m => `${m.role === 'user' ? '用户' : '助手'}：${m.content}`).join('\n') +
+    const recentMessages = messages.slice(-6); // Only take the last 6 messages
+    historyPrompt = 'Conversation history:\n' +
+      recentMessages.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n') +
       '\n\n';
   }
-  
-  const userPrompt = `${historyPrompt}当前问题：${question}\n\n请改写上述问题，使其成为一个独立、完整的查询。`;
+
+  const userPrompt = `${historyPrompt}Current question: ${question}\n\nPlease rewrite the above question into a standalone, complete query`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), CHAT_CONFIG.timeout);
@@ -96,18 +96,18 @@ export async function rewriteQuery(input: RewriteQueryInput): Promise<string> {
     clearTimeout(timeoutId);
     
     if (!response.ok) {
-      throw new Error(`Mistral API ${response.status}`);
+      throw new Error(`OpenAI API ${response.status}`);
     }
     
-    const data = await response.json() as MistralChatResponse;
+    const data = await response.json() as OpenAIChatResponse;
     
     if (!data.choices || data.choices.length === 0) {
-      throw new Error('No response from Mistral');
+      throw new Error('No response from OpenAI');
     }
     
     const rewritten = data.choices[0].message.content.trim();
     
-    // 如果改写结果为空，返回原问题
+    // If rewrite result is empty, return original question
     if (!rewritten || rewritten.length === 0) {
       return question;
     }

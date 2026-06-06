@@ -1,39 +1,39 @@
 /**
- * 幻觉检测节点
- * 使用LLM检测回答是否有幻觉（与检索到的资料不符）
+ * Hallucination Check Node
+ * Uses LLM to detect hallucinations in the answer (content contradicting retrieved sources)
  */
 
 import type { RAGState } from '../state';
 import type { RetrievedChunk } from '@/lib/retrieve';
 import { CHAT_CONFIG } from '@/lib/model-config';
 
-const SYSTEM_PROMPT = `你是一个回答质量评估专家。
-请对给定的回答进行综合评分（0-100分）。
+const SYSTEM_PROMPT = `You are an answer quality evaluation expert.
+Please provide a comprehensive score (0-100) for the given answer.
 
-评分标准：
-1. **事实准确性**（30分）：回答中的核心事实是否在文档中有依据
-2. **来源标注准确性**（30分）：回答中【来源：xxx，第X页】标注是否与实际文档匹配
-   - 检查引用的内容是否确实来自标注的文档
-   - 检查页码是否正确
-   - 检查文件名是否正确
-   - 如果回答没有来源标注但有引用内容，扣15分
-3. **相关性**（20分）：回答是否针对用户问题
-4. **完整性**（10分）：回答是否完整，是否遗漏重要信息
-5. **表达质量**（10分）：回答是否清晰、流畅
+Scoring criteria:
+1. **Fact Accuracy** (30 points): Whether core facts in the answer are supported by documents
+2. **Source Citation Accuracy** (30 points): Whether [Source: xxx, Page X] citations match actual documents
+   - Check if cited content actually comes from the referenced document
+   - Check if page numbers are correct
+   - Check if filenames are correct
+   - Deduct 15 points if cited content lacks source annotation
+3. **Relevance** (20 points): Whether the answer addresses the user's question
+4. **Completeness** (10 points): Whether the answer is comprehensive and doesn't miss important information
+5. **Expression Quality** (10 points): Whether the answer is clear and fluent
 
-评分规则：
-- 80分以上：回答质量良好，可以使用
-- 60-79分：回答基本可用，但有小问题
-- 60分以下：回答质量较差，建议重新生成
+Scoring rules:
+- 80+: Good quality, acceptable
+- 60-79: Acceptable with minor issues
+- Below 60: Poor quality, needs regeneration
 
-特殊说明：
-- 合理的推理和总结不扣分
-- 承认"无法回答"时，如果确实没有相关文档，给高分
-- 来源标注错误属于严重幻觉，应大幅扣分
+Special notes:
+- Reasonable inferences and summaries are not penalized
+- "Unable to answer" responses get high scores if no relevant documents exist
+- Incorrect source citations are serious hallucinations and should be heavily penalized
 
-输出格式：只输出一个0-100的数字，不要其他内容。`;
+Output format: Only output a number from 0-100, no other content`;
 
-interface MistralChatResponse {
+interface OpenAIChatResponse {
   choices: Array<{
     message: {
       content: string;
@@ -49,9 +49,9 @@ interface HallucinationCheckInput {
 const QUALITY_THRESHOLD = 90;
 
 /**
- * 幻觉检测节点
- * @param input - 包含状态和API密钥的输入
- * @returns 包含hallucination检测结果的状态更新
+ * Hallucination check node
+ * @param input - Input containing state and API key
+ * @returns State update with hallucination check results
  */
 export async function hallucinationCheckNode(
   input: HallucinationCheckInput
@@ -59,7 +59,7 @@ export async function hallucinationCheckNode(
   const { state, apiKey } = input;
   const { question, answer, top_chunks } = state;
   
-  // 如果没有回答或没有chunks，不进行幻觉检测
+  // Skip hallucination check if no answer or no chunks
   if (!answer || top_chunks.length === 0) {
     return { hallucination: false };
   }
@@ -77,7 +77,7 @@ export async function hallucinationCheckNode(
       apiKey 
     });
     
-    // 低于阈值视为"幻觉"（需要重试）
+    // Below threshold is considered "hallucination" (needs retry)
     const hasHallucination = score < QUALITY_THRESHOLD;
     
     console.log('[Hallucination Check] Result:', { 
@@ -88,8 +88,8 @@ export async function hallucinationCheckNode(
     
     return { hallucination: hasHallucination };
   } catch (error) {
-    console.error('幻觉检测失败:', error);
-    // 检测失败时，保守起见假设无幻觉
+    console.error('Hallucination check failed:', error);
+    // On check failure, conservatively assume no hallucination
     return { hallucination: false };
   }
 }
@@ -102,42 +102,42 @@ interface CheckAnswerQualityInput {
 }
 
 /**
- * 使用LLM评估回答质量
- * @param input - 包含问题、回答、chunks和API密钥的输入
- * @returns 质量分数（0-100）
+ * Use LLM to evaluate answer quality
+ * @param input - Input containing question, answer, chunks and API key
+ * @returns Quality score (0-100)
  */
 async function checkAnswerQuality(input: CheckAnswerQualityInput): Promise<number> {
   const { question, answer, chunks, apiKey } = input;
   
   const context = chunks
-    .map(c => `[${c.filename} 第${c.page}页] ${c.content}`)
+    .map(c => `[${c.filename} Page ${c.page}] ${c.content}`)
     .join('\n\n');
-  
+
   const filenames = [...new Set(chunks.map(c => c.filename))];
-  
-  const userPrompt = `## 文档文件名列表
+
+  const userPrompt = `## Document Filename List
 ${filenames.map(f => `- ${f}`).join('\n')}
 
-## 参考文档片段（每条包含文件名、页码和内容）
+## Reference Document Fragments (each contains filename, page number and content)
 ${context}
 
-## 用户问题
+## User Question
 ${question}
 
-## 待评估的回答
+## Answer to Evaluate
 ${answer}
 
 ---
 
-请逐条核对回答中的来源标注：
-1. 找到回答中所有【来源：xxx，第X页】标注
-2. 检查标注的文件名是否在"文档文件名列表"中
-3. 检查该内容是否确实出现在对应文档的对应页码中
-4. 如果文件名不存在或内容与页码不符，说明来源有误
+Please verify each source citation in the answer:
+1. Find all [Source: xxx, Page X] citations in the answer
+2. Check if the cited filename exists in the "Document Filename List"
+3. Check if the content actually appears in the corresponding document at the corresponding page
+4. If filename doesn't exist or content doesn't match page, the source is incorrect
 
-然后根据评分标准（事实准确性30分、来源标注准确性30分、相关性20分、完整性10分、表达质量10分）给出总分。
+Then give a total score based on scoring criteria (fact accuracy 30 points, source citation accuracy 30 points, relevance 20 points, completeness 10 points, expression quality 10 points).
 
-只输出一个0-100的数字。`;
+Only output a number from 0-100.`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), CHAT_CONFIG.timeout);
@@ -164,26 +164,26 @@ ${answer}
     clearTimeout(timeoutId);
     
     if (!response.ok) {
-      throw new Error(`Mistral API ${response.status}`);
+      throw new Error(`OpenAI API ${response.status}`);
     }
     
-    const data = await response.json() as MistralChatResponse;
+    const data = await response.json() as OpenAIChatResponse;
     
     if (!data.choices || data.choices.length === 0) {
-      throw new Error('No response from Mistral');
+      throw new Error('No response from OpenAI');
     }
     
     const result = data.choices[0].message.content.trim();
     console.log('[Hallucination Check] LLM Response:', result);
     
-    // 提取数字
+    // Extract number
     const scoreMatch = result.match(/\d+/);
     if (scoreMatch) {
       const score = parseInt(scoreMatch[0], 10);
       return Math.min(100, Math.max(0, score));
     }
     
-    // 无法解析时，默认给高分（宁可放过）
+    // On parse failure, default to high score (prefer false negatives)
     console.log('[Hallucination Check] Failed to parse score, defaulting to 85');
     return 85;
   } catch (error) {

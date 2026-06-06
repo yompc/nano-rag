@@ -2,7 +2,7 @@
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { D1Database, Chunk, DocType } from '@/lib/types';
-import { getMistralEmbedding } from '@/lib/embedding';
+import { getOpenAIEmbedding } from '@/lib/embedding';
 import { parseEmbeddingToFloat32Array, cosineSimilarity } from '@/lib/vector-utils';
 
 const RETRIEVE_CONFIG = {
@@ -44,24 +44,24 @@ export async function retrieveChunks(input: RetrieveInput): Promise<RetrieveResp
   const { env } = (await getCloudflareContext({ async: true })) as unknown as { env: Env };
 
   if (!env.DB) {
-    return { success: false, error: 'D1数据库未绑定' };
+    return { success: false, error: 'D1 database not bound' };
   }
 
   if (!env.OPENAI_API_KEY) {
-    return { success: false, error: 'OPENAI_API_KEY未配置' };
+    return { success: false, error: 'OPENAI_API_KEY not configured' };
   }
 
   if (!input.query || input.query.trim().length === 0) {
-    return { success: false, error: '查询文本不能为空' };
+    return { success: false, error: 'Query text cannot be empty' };
   }
 
   try {
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('检索超时')), RETRIEVE_CONFIG.timeout);
+      setTimeout(() => reject(new Error('Retrieval timeout')), RETRIEVE_CONFIG.timeout);
     });
 
     const retrievePromise = async (): Promise<RetrieveResponse> => {
-      const queryEmbedding = await getMistralEmbedding(input.query.trim(), env.OPENAI_API_KEY);
+      const queryEmbedding = await getOpenAIEmbedding(input.query.trim(), env.OPENAI_API_KEY);
       const queryVector = new Float32Array(queryEmbedding);
 
       const candidates = await fetchCandidates(env.DB, input);
@@ -85,8 +85,8 @@ export async function retrieveChunks(input: RetrieveInput): Promise<RetrieveResp
 
     return await Promise.race([retrievePromise(), timeoutPromise]);
   } catch (error) {
-    const message = error instanceof Error ? error.message : '未知错误';
-    return { success: false, error: `检索失败: ${message}` };
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: `Retrieval failed: ${message}` };
   }
 }
 
@@ -97,15 +97,15 @@ async function fetchCandidates(
   const conditions: string[] = [];
   const params: (string | number)[] = [];
 
-  // 文档类型过滤 - 必须满足
+  // Document type filter - must match
   if (input.docType) {
     conditions.push('doc_type = ?');
     params.push(input.docType);
   }
 
-  // 关键词过滤 - 使用JSON函数优化查询
+  // Keyword filter - use JSON function to optimize query
   if (input.keywords && input.keywords.length > 0) {
-    // 构建OR条件：任意一个关键词匹配即可
+    // Build OR condition: any keyword match is sufficient
     const keywordConditions = input.keywords.map(() => 
       'EXISTS (SELECT 1 FROM json_each(keywords_json) WHERE value = ?)'
     );
@@ -115,7 +115,7 @@ async function fetchCandidates(
     }
   }
 
-  // 所有条件使用AND连接
+  // All conditions connected with AND
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
   const sql = `

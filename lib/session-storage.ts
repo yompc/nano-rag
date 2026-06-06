@@ -1,6 +1,6 @@
 /**
- * localStorage 会话管理工具
- * 在浏览器本地存储聊天历史
+ * localStorage Session Management Utility
+ * Store chat history in browser local storage
  */
 
 const STORAGE_KEYS = {
@@ -12,7 +12,7 @@ export interface LocalMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  timestamp: number; // 使用时间戳而非 Date 对象，便于序列化
+  timestamp: number; // Use timestamp instead of Date object for easier serialization
   sources?: Array<{
     filename: string;
     page: number;
@@ -46,7 +46,7 @@ export interface LocalSession {
 }
 
 /**
- * 获取所有会话
+ * Get all sessions
  */
 export function getSessions(): LocalSession[] {
   if (typeof window === 'undefined') return [];
@@ -55,7 +55,7 @@ export function getSessions(): LocalSession[] {
 }
 
 /**
- * 保存所有会话
+ * Save all sessions
  */
 export function saveSessions(sessions: LocalSession[]): void {
   if (typeof window === 'undefined') return;
@@ -63,7 +63,7 @@ export function saveSessions(sessions: LocalSession[]): void {
 }
 
 /**
- * 获取当前会话 ID
+ * Get current session ID
  */
 export function getCurrentSessionId(): string | null {
   if (typeof window === 'undefined') return null;
@@ -71,7 +71,7 @@ export function getCurrentSessionId(): string | null {
 }
 
 /**
- * 保存当前会话 ID
+ * Save current session ID
  */
 export function saveCurrentSessionId(sessionId: string): void {
   if (typeof window === 'undefined') return;
@@ -79,7 +79,7 @@ export function saveCurrentSessionId(sessionId: string): void {
 }
 
 /**
- * 清除当前会话 ID
+ * Clear current session ID
  */
 export function clearCurrentSessionId(): void {
   if (typeof window === 'undefined') return;
@@ -87,12 +87,12 @@ export function clearCurrentSessionId(): void {
 }
 
 /**
- * 创建新会话
+ * Create new session
  */
 export function createSession(): LocalSession {
   return {
     id: `sess_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-    title: '新对话',
+    title: 'New Chat',
     messages: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -100,7 +100,7 @@ export function createSession(): LocalSession {
 }
 
 /**
- * 添加或更新会话
+ * Add or update session
  */
 export function upsertSession(session: LocalSession): void {
   const sessions = getSessions();
@@ -114,7 +114,7 @@ export function upsertSession(session: LocalSession): void {
 }
 
 /**
- * 删除会话
+ * Delete session
  */
 export function deleteSessionFromStorage(sessionId: string): void {
   const sessions = getSessions().filter(s => s.id !== sessionId);
@@ -122,7 +122,7 @@ export function deleteSessionFromStorage(sessionId: string): void {
 }
 
 /**
- * 获取单个会话
+ * Get single session
  */
 export function getSession(sessionId: string): LocalSession | null {
   const sessions = getSessions();

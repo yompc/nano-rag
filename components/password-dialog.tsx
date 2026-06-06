@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface PasswordDialogProps {
   open: boolean;
@@ -10,9 +11,11 @@ interface PasswordDialogProps {
 }
 
 export function PasswordDialog({ open, onClose, onSubmit, error }: PasswordDialogProps) {
+  const t = useTranslations('password');
+  const tCommon = useTranslations('common');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
-  
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedPassword = localStorage.getItem('admin_password');
@@ -49,7 +52,7 @@ export function PasswordDialog({ open, onClose, onSubmit, error }: PasswordDialo
       <button
         type="button"
         onClick={handleClose}
-        aria-label="关闭"
+        aria-label={tCommon('close')}
         className="fixed inset-0 bg-black/20 dark:bg-black/40 z-50 cursor-default"
       />
 
@@ -59,16 +62,16 @@ export function PasswordDialog({ open, onClose, onSubmit, error }: PasswordDialo
         >
           <div className="flex items-center justify-between p-4 border-b border-[var(--hairline)]">
             <h2 className="text-lg font-semibold text-[var(--text)]">
-              管理员验证
+              {t('title')}
             </h2>
             <button
               type="button"
               onClick={handleClose}
               className="p-2 bg-[var(--canvas)] border border-[var(--hairline)] rounded-full hover:bg-[var(--surface-soft)] transition-colors"
-              aria-label="关闭"
+              aria-label={tCommon('close')}
             >
               <svg className="w-4 h-4 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <title>关闭</title>
+                <title>{tCommon('close')}</title>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -83,7 +86,7 @@ export function PasswordDialog({ open, onClose, onSubmit, error }: PasswordDialo
 
             <div className="mb-4">
               <label htmlFor="password" className="block text-sm text-[var(--body-strong)] mb-2">
-                密码
+                {t('label')}
               </label>
               <input
                 ref={inputRef}
@@ -92,7 +95,7 @@ export function PasswordDialog({ open, onClose, onSubmit, error }: PasswordDialo
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="input-text w-full"
-                placeholder="请输入管理员密码"
+                placeholder={t('placeholder')}
                 autoComplete="current-password"
               />
             </div>
@@ -106,7 +109,7 @@ export function PasswordDialog({ open, onClose, onSubmit, error }: PasswordDialo
                 className="w-4 h-4 rounded border-[var(--hairline)] text-[var(--primary)] focus:ring-[var(--primary)] focus:ring-offset-0 cursor-pointer"
               />
               <label htmlFor="remember" className="text-sm text-[var(--body)] cursor-pointer select-none">
-                记住密码
+                {t('remember')}
               </label>
             </div>
 
@@ -116,13 +119,13 @@ export function PasswordDialog({ open, onClose, onSubmit, error }: PasswordDialo
                 onClick={handleClose}
                 className="btn-secondary flex-1"
               >
-                取消
+                {tCommon('cancel')}
               </button>
               <button
                 type="submit"
                 className="btn-primary flex-1"
               >
-                确认
+                {tCommon('confirm')}
               </button>
             </div>
           </form>

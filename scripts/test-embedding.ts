@@ -1,32 +1,32 @@
 /**
  * Embedding功能测试脚本
- * 测试Mistral Embedding、文本分片、关键词提取功能
+ * 测试OpenAI Embedding、文本分片、关键词提取功能
  */
 
-import { getMistralEmbedding, validateEmbedding } from '../lib/embedding';
+import { getOpenAIEmbedding, validateEmbedding } from '../lib/embedding';
 import { EMBEDDING_CONFIG } from '../lib/model-config';
 import { chunkText, CHUNK_CONFIG } from '../lib/chunking';
 import { extractKeywords } from '../lib/keywords';
 
-const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-if (!MISTRAL_API_KEY) {
-  console.error('❌ 错误: 请设置环境变量 MISTRAL_API_KEY');
-  console.error('   示例: MISTRAL_API_KEY=your_key npx tsx scripts/test-embedding.ts');
+if (!OPENAI_API_KEY) {
+  console.error('❌ 错误: 请设置环境变量 OPENAI_API_KEY');
+  console.error('   示例: OPENAI_API_KEY=your_key npx tsx scripts/test-embedding.ts');
   process.exit(1);
 }
 
 async function testEmbedding() {
   console.log('\n=== 测试1: Embedding生成 ===');
   
-  const testText = '这是一个测试文本，用于验证Mistral Embedding API是否正常工作。';
+  const testText = '这是一个测试文本，用于验证OpenAI Embedding API是否正常工作。';
   
   try {
     console.log(`📝 输入文本: "${testText}"`);
     console.log('⏳ 正在生成embedding...');
     
     const startTime = Date.now();
-    const embedding = await getMistralEmbedding(testText, MISTRAL_API_KEY!);
+    const embedding = await getOpenAIEmbedding(testText, OPENAI_API_KEY!);
     const duration = Date.now() - startTime;
     
     console.log(`✅ Embedding生成成功 (耗时: ${duration}ms)`);
@@ -92,7 +92,7 @@ async function testKeywords() {
     console.log('⏳ 正在提取关键词...');
     
     const startTime = Date.now();
-    const keywords = await extractKeywords(testText, MISTRAL_API_KEY!);
+    const keywords = await extractKeywords(testText, OPENAI_API_KEY!);
     const duration = Date.now() - startTime;
     
     console.log(`✅ 关键词提取成功 (耗时: ${duration}ms)`);
@@ -129,11 +129,11 @@ Cloudflare Workers是一个serverless平台，可以在边缘节点运行JavaScr
     console.log(`   1. 分片: ${chunks.length} 个片段`);
     
     // Embedding（只测试第一个片段）
-    const embedding = await getMistralEmbedding(chunks[0].content, MISTRAL_API_KEY!);
+    const embedding = await getOpenAIEmbedding(chunks[0].content, OPENAI_API_KEY!);
     console.log(`   2. Embedding: ${embedding.length} 维向量`);
     
     // 关键词提取
-    const keywords = await extractKeywords(chunks[0].content, MISTRAL_API_KEY!);
+    const keywords = await extractKeywords(chunks[0].content, OPENAI_API_KEY!);
     console.log(`   3. 关键词: [${keywords.join(', ')}]`);
     
     const duration = Date.now() - startTime;
