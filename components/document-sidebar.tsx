@@ -113,7 +113,7 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
                 <button
                   type="button"
                   onClick={fetchDocs}
-                  className="p-2 bg-[var(--canvas)] border border-[var(--hairline)] rounded-full hover:bg-[var(--surface-soft)] transition-colors"
+                  className="p-2 bg-[var(--canvas)] border border-[var(--hairline)] rounded-full hover:bg-[var(--surface-soft)] transition-all focus-visible:outline-2 focus-visible:outline-[var(--primary)] focus-visible:outline-offset-2"
                   aria-label={tCommon('retry')}
                 >
                   <svg className="w-4 h-4 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -124,7 +124,7 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-2 bg-[var(--canvas)] border border-[var(--hairline)] rounded-full hover:bg-[var(--surface-soft)] transition-colors"
+                  className="p-2 bg-[var(--canvas)] border border-[var(--hairline)] rounded-full hover:bg-[var(--surface-soft)] transition-all focus-visible:outline-2 focus-visible:outline-[var(--primary)] focus-visible:outline-offset-2"
                   aria-label={tCommon('close')}
                 >
                   <svg className="w-4 h-4 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -139,7 +139,7 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
             <div className="p-4 border-b border-[var(--hairline)]">
               <Link
                 href="/upload"
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition-all shadow-sm hover:shadow-md focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <title>{t('upload')}</title>
@@ -182,7 +182,7 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
                   {docs.map((doc) => (
                     <div
                       key={doc.id}
-                      className="p-4 bg-[var(--canvas)] hover:bg-[var(--surface-soft)] transition-colors duration-150"
+                      className="p-4 bg-[var(--canvas)] hover:bg-[var(--surface-soft)] transition-all duration-150 hover:shadow-sm"
                     >
                       {deleteConfirm === doc.id ? (
                         <div className="space-y-3">
@@ -190,22 +190,22 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
                             {t('deleteConfirm', { filename: doc.filename })}
                           </p>
                           <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setDeleteConfirm(null)}
-                              disabled={deleting}
-                              className="flex-1 px-3 py-1.5 text-xs font-medium text-[var(--muted)] border border-[var(--hairline)] rounded-lg hover:bg-[var(--surface-soft)] transition-colors disabled:opacity-50"
-                            >
-                              {tCommon('cancel')}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(doc.id, localStorage.getItem('admin_password') || undefined)}
-                              disabled={deleting}
-                              className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-[var(--primary)] hover:opacity-90 rounded-lg transition-opacity disabled:opacity-50"
-                            >
-                              {deleting ? tCommon('loading') : tCommon('confirm')}
-                            </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirm(null)}
+                            disabled={deleting}
+                            className="flex-1 px-3 py-1.5 text-xs font-medium text-[var(--muted)] border border-[var(--hairline)] rounded-lg hover:bg-[var(--surface-soft)] transition-all disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--primary)] focus-visible:outline-offset-2"
+                          >
+                            {tCommon('cancel')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(doc.id, localStorage.getItem('admin_password') || undefined)}
+                            disabled={deleting}
+                            className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-[var(--primary)] hover:opacity-90 rounded-lg transition-all disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
+                          >
+                            {deleting ? tCommon('loading') : tCommon('confirm')}
+                          </button>
                           </div>
                         </div>
                       ) : (
@@ -227,7 +227,7 @@ export function DocumentSidebar({ isOpen, onClose }: DocumentSidebarProps) {
                           <button
                             type="button"
                             onClick={() => handleDeleteClick(doc.id)}
-                            className="p-1.5 text-[var(--primary)] hover:opacity-80 transition-opacity rounded-lg"
+                            className="p-1.5 text-[var(--primary)] hover:opacity-80 transition-all rounded-lg hover:bg-[var(--primary-subtle)] focus-visible:outline-2 focus-visible:outline-[var(--primary)] focus-visible:outline-offset-2"
                             aria-label={tCommon('delete')}
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

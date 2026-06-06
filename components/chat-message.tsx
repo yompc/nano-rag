@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { memo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -154,12 +154,12 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: 
       )}
 
       <motion.div
-        className={`rounded-lg max-w-[80%] ${
+        className={`rounded-2xl max-w-[80%] ${
           isUser
-            ? 'bg-[var(--primary)] text-white px-4 py-3'
+            ? 'bg-[var(--primary)] text-white px-4 py-3 rounded-br-sm shadow-sm'
             : unableToAnswer
-              ? 'bg-[var(--surface-card)] text-[var(--ink)] overflow-hidden'
-              : 'bg-[var(--surface-card)] text-[var(--ink)] px-4 py-3'
+              ? 'bg-[var(--surface-card)] text-[var(--ink)] overflow-hidden rounded-bl-sm'
+              : 'bg-[var(--surface-card)] text-[var(--ink)] px-4 py-3 rounded-bl-sm shadow-sm'
         }`}
       >
         {unableToAnswer && (
@@ -325,29 +325,45 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming = false }: 
         )}
       </motion.div>
 
-      {/* Hover Preview Tooltip (only when not pinned) */}
+      {/* Preview Windows - 优化性能，不使用 wait 模式避免卡顿 */}
       {hoveredSource && !pinnedSource && (
-        <PDFPreviewTooltip
-          source={hoveredSource}
-          mouseX={mousePos.x}
-          mouseY={mousePos.y}
-        />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.1 }}
+          className="fixed z-50"
+          style={{ pointerEvents: 'none' }}
+        >
+          <PDFPreviewTooltip
+            source={hoveredSource}
+            mouseX={mousePos.x}
+            mouseY={mousePos.y}
+          />
+        </motion.div>
       )}
 
-      {/* Pinned Preview Dialog (clicked, stays in place) */}
       {pinnedSource && (
         <>
           <div
             className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
             onClick={() => setPinnedSource(null)}
           />
-          <PDFPreviewTooltip
-            source={pinnedSource}
-            mouseX={0}
-            mouseY={0}
-            pin
-            onClose={() => setPinnedSource(null)}
-          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="fixed z-50"
+            style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+          >
+            <PDFPreviewTooltip
+              source={pinnedSource}
+              mouseX={0}
+              mouseY={0}
+              pin
+              onClose={() => setPinnedSource(null)}
+            />
+          </motion.div>
         </>
       )}
     </motion.div>

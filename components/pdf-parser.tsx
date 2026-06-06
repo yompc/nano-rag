@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import * as pdfjs from 'pdfjs-dist';
+import { useTranslations } from 'next-intl';
 
 // Configure PDF.js worker - use static file from public directory
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -24,6 +25,7 @@ interface PDFParserProps {
 }
 
 export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps) {
+  const t = useTranslations('pdfParser');
   const [parsing, setParsing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -33,7 +35,7 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
 
   const parsePDF = useCallback(async (file: File) => {
     if (!file || file.type !== 'application/pdf') {
-      onError('请上传PDF文件');
+      onError(t('notPdf'));
       return;
     }
 
@@ -68,12 +70,12 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
       setPreviewPages(pages);
       onParsed(result);
     } catch (error) {
-      const message = error instanceof Error ? error.message : '未知错误';
-      onError(`PDF解析失败: ${message}`);
+      const message = error instanceof Error ? error.message : t('unknownError');
+      onError(`${t('parseFailed')}: ${message}`);
     } finally {
       setParsing(false);
     }
-  }, [onParsed, onError]);
+  }, [onParsed, onError, t]);
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -123,7 +125,7 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
         onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
-        aria-label="上传PDF文件"
+        aria-label={t('uploadAria')}
         className={`
           relative bg-[var(--surface-card)] rounded-lg border-2 border-dashed border-[var(--hairline)] p-12
           transition-all duration-200 cursor-pointer
@@ -151,9 +153,9 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
             fill="none" 
             viewBox="0 0 24 24" 
             stroke="currentColor"
-            aria-label="PDF文件图标"
+            aria-label={t('pdfIcon')}
           >
-            <title>PDF文件图标</title>
+            <title>{t('pdfIcon')}</title>
             <path 
               strokeLinecap="round" 
               strokeLinejoin="round" 
@@ -165,10 +167,10 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
         
         <div className="text-center">
           <p className="text-lg font-medium text-[var(--ink)]">
-            拖拽PDF文件到此处
+            {t('dragOrDrop')}
           </p>
           <p className="text-sm text-[var(--muted)] mt-1">
-            或点击选择文件
+            {t('clickToSelect')}
           </p>
         </div>
 
@@ -181,7 +183,7 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
               />
             </div>
             <p className="mt-3 text-sm font-medium text-[var(--ink)]">
-              正在解析... {progress}%
+              {t('parsing')} {progress}%
             </p>
           </div>
         )}
@@ -200,12 +202,12 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
               fill="none" 
               viewBox="0 0 24 24" 
               stroke="currentColor"
-              aria-label="展开/收起"
+              aria-label={t('togglePreview')}
             >
-              <title>展开/收起</title>
+              <title>{t('togglePreview')}</title>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            查看提取的文本 ({previewPages.length} 页)
+            {t('viewExtracted')} ({previewPages.length} {t('pages')})
           </button>
 
           {showPreview && (
@@ -216,10 +218,10 @@ export function PDFParser({ onParsed, onError, className = '' }: PDFParserProps)
                   className="bg-[var(--canvas)] border border-[var(--hairline)] rounded-lg p-4"
                 >
                   <p className="text-xs font-medium text-[var(--muted)] mb-2">
-                    第 {page.pageNumber} 页
+                    {t('page')} {page.pageNumber}
                   </p>
                   <p className="text-sm text-[var(--ink)] leading-relaxed whitespace-pre-wrap">
-                    {page.text || '(此页无可提取文本)'}
+                    {page.text || t('noText')}
                   </p>
                 </div>
               ))}

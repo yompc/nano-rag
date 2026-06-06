@@ -1,8 +1,10 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Inter, Cormorant_Garamond } from "next/font/google";
 import { JsonLd } from "@/components/json-ld";
+import { Providers } from "@/components/providers";
 import "./globals.css";
 
 const inter = Inter({
@@ -85,9 +87,33 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={`${inter.className} ${cormorant.className} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        {/* Theme flash prevention: apply stored theme before paint */}
+        <Script
+          id="theme-flash-prevention"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  if (theme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                  } else if (theme === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                  } else {
+                    var saved = document.documentElement.getAttribute('data-theme');
+                    if (saved) document.documentElement.removeAttribute('data-theme');
+                  }
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
         <NextIntlClientProvider messages={messages}>
           <JsonLd />
-          {children}
+          <Providers>
+            {children}
+          </Providers>
         </NextIntlClientProvider>
       </body>
     </html>

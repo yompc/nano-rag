@@ -2,15 +2,16 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ChatMessage, type Message } from '@/components/chat-message';
 import { type ThinkingStep } from '@/components/thinking-process';
 import { DocumentSidebar } from '@/components/document-sidebar';
 import { SessionSidebar } from '@/components/session-sidebar';
-import { LanguageSwitcher } from '@/components/language-switcher';
+import { AppShell } from '@/components/app-shell';
+import { OnboardingCard } from '@/components/onboarding-card';
 import { useSessions } from '@/hooks/use-sessions';
 import { useMessagesHeights } from '@/hooks/use-message-height';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { STEP_METADATA } from '@/lib/constants';
 import type { LocalMessage } from '@/lib/session-storage';
 
@@ -28,7 +29,6 @@ function convertLocalToMessage(messages: LocalMessage[]): Message[] {
 export default function HomePage() {
   const t = useTranslations('home');
   const tCommon = useTranslations('common');
-  const tNav = useTranslations('nav');
   const {
     sessions,
     currentSessionId,
@@ -50,7 +50,6 @@ export default function HomePage() {
   const [streamingContent, setStreamingContent] = useState('');
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(768);
-  const [showLibraryBubble, setShowLibraryBubble] = useState(false);
   const thinkingStepsRef = useRef<ThinkingStep[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -67,6 +66,12 @@ export default function HomePage() {
     setMessages([]);
   }, [createNewSession]);
 
+  useKeyboardShortcuts({
+    newChat: handleNewSession,
+    upload: () => { window.location.href = '/upload'; },
+    library: () => { window.location.href = '/library'; },
+  });
+
   const handleDeleteSession = useCallback((sessionId: string) => {
     deleteSessionById(sessionId);
     if (currentSessionId === sessionId) {
@@ -80,20 +85,6 @@ export default function HomePage() {
       setIsHydrated(true);
     }
   }, [isHydrated, currentMessages]);
-
-  useEffect(() => {
-    if (isHydrated) {
-      const hasSeenBubble = localStorage.getItem('hasSeenLibraryBubble');
-      if (!hasSeenBubble) {
-        setShowLibraryBubble(true);
-        const timer = setTimeout(() => {
-          setShowLibraryBubble(false);
-          localStorage.setItem('hasSeenLibraryBubble', 'true');
-        }, 10000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [isHydrated]);
 
   useEffect(() => {
     if (messages.length > 0 && !sessionsLoading && isHydrated) {
@@ -265,8 +256,6 @@ export default function HomePage() {
                 }
 
                 case 'sources': {
-                  // Save sources for the final message
-                  // preview now contains the full chunk content
                   collectedSources = data.sources.map((src: { filename: string; page: number; preview: string }) => ({
                     filename: src.filename,
                     page: src.page,
@@ -431,189 +420,158 @@ export default function HomePage() {
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="flex h-screen bg-[var(--canvas)]">
-      <SessionSidebar
-        sessions={sessions}
-        currentSessionId={currentSessionId}
-        onSelectSession={handleSelectSession}
-        onNewSession={handleNewSession}
-        onDeleteSession={handleDeleteSession}
-        isOpen={historySidebarOpen}
-        onClose={() => setHistorySidebarOpen(false)}
-      />
+    <AppShell hideMobileMenu>
+      <div className="flex flex-1 min-h-0 bg-[var(--canvas)]">
+        <SessionSidebar
+          sessions={sessions}
+          currentSessionId={currentSessionId}
+          onSelectSession={handleSelectSession}
+          onNewSession={handleNewSession}
+          onDeleteSession={handleDeleteSession}
+          isOpen={historySidebarOpen}
+          onClose={() => setHistorySidebarOpen(false)}
+        />
 
-      <div className="flex-1 flex flex-col min-w-0 md:ml-0" ref={containerRef}>
-        <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--hairline)] bg-[var(--canvas)]">
-          <div className="flex items-center gap-2">
+        <div className="flex-1 flex flex-col min-w-0" ref={containerRef}>
+          {/* Mobile session toggle button (stays inside page content) */}
+          <div className="md:hidden flex items-center px-4 py-2 border-b border-[var(--hairline)] bg-[var(--canvas)]">
             <button
               type="button"
               onClick={() => setHistorySidebarOpen(true)}
-              className="md:hidden p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors"
+              className="p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors"
               aria-label={t('openHistory')}
             >
               <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <img src="/logo.svg" alt="Nano RAG" className="w-8 h-8" />
-            <span className="font-display font-semibold text-base md:text-lg text-[var(--ink)]">Nano RAG</span>
           </div>
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher />
-            <Link
-              href="/landing"
-              className="hidden sm:inline text-sm text-[var(--primary)] hover:underline px-2"
-            >
-              {tNav('learnMore')}
-            </Link>
-            <Link
-              href="/upload"
-              className="p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors"
-              aria-label={tNav('uploadDoc')}
-            >
-              <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </Link>
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-full hover:bg-[var(--surface-soft)] transition-colors relative"
-              aria-label={tNav('docLibrary')}
-            >
-              <svg className="w-5 h-5 text-[var(--muted-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              {showLibraryBubble && (
-                <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[var(--ink)] text-white text-sm px-3 py-1.5 rounded-lg shadow-lg animate-bounce-in">
-                  {tNav('docLibrary')}
-                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--ink)] rotate-45" />
-                </span>
+
+          <div className="flex-1 overflow-y-auto bg-[var(--canvas)]">
+            <div className="max-w-3xl mx-auto">
+              {!hasMessages ? (
+                <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-4 py-8 overflow-y-auto">
+                  <img src="/logo.svg" alt="Nano RAG" className="w-16 h-16 mb-6" />
+                  <h1 className="text-xl md:text-2xl font-semibold text-[var(--ink)] mb-2">
+                    {t('title')}
+                  </h1>
+                  <p className="text-sm text-[var(--muted-soft)] mb-8">
+                    {t('subtitle')}
+                  </p>
+
+                  <div className="w-full max-w-2xl mb-6">
+                    <OnboardingCard />
+                  </div>
+
+                  <div className="w-full max-w-2xl">
+                    <div className="relative">
+                      <textarea
+                        ref={inputRef}
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={t('placeholder')}
+                        rows={3}
+                        className="input-textarea w-full px-6 py-4 pr-14 rounded-2xl shadow-sm focus:shadow-md transition-shadow duration-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={sendStreamingMessage}
+                        disabled={loading || !input.trim()}
+                        className="btn-primary absolute right-3 bottom-3 w-10 h-10 !p-0 rounded-full flex items-center justify-center transition-all duration-150 hover:scale-105 active:scale-95 disabled:hover:scale-100"
+                        aria-label={tCommon('submit')}
+                      >
+                        <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                      </button>
+                    </div>
+                    <p className="text-xs text-center text-[var(--muted)] mt-3">
+                      {t('sendHint')}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="px-4 py-6">
+                  <AnimatePresence>
+                    {displayMessages.map((message, index) => {
+                      const isCurrentStreaming = loading &&
+                        index === displayMessages.length - 1 &&
+                        message.role === 'assistant' &&
+                        message.id === streamingMessageId;
+
+                      const height = messageHeights.get(message.id);
+
+                      return (
+                        <div
+                          key={message.id || `message-${index}`}
+                          style={{ minHeight: height || undefined }}
+                        >
+                          <ChatMessage
+                            message={message}
+                            isStreaming={isCurrentStreaming}
+                          />
+                        </div>
+                      );
+                    })}
+
+                    {loading && displayMessages[displayMessages.length - 1]?.role === 'user' && (
+                      <div className="flex items-center gap-2 mt-4">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />
+                          <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse animation-delay-200" />
+                          <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse animation-delay-400" />
+                        </div>
+                        <span className="text-sm text-[var(--muted-soft)]">
+                          {t('thinking')}
+                        </span>
+                      </div>
+                    )}
+                  </AnimatePresence>
+
+                  <div ref={messagesEndRef} />
+                </div>
               )}
-            </button>
+            </div>
           </div>
-        </header>
 
-        <div className="flex-1 overflow-y-auto bg-[var(--canvas)]">
-          <div className="max-w-3xl mx-auto">
-            {!hasMessages ? (
-              <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] px-4">
-                <img src="/logo.svg" alt="Nano RAG" className="w-16 h-16 mb-6" />
-                <h1 className="text-xl md:text-2xl font-semibold text-[var(--ink)] mb-2">
-                  {t('title')}
-                </h1>
-                <p className="text-sm text-[var(--muted-soft)] mb-8">
-                  {t('subtitle')}
-                </p>
-
-                <div className="w-full max-w-2xl">
-                  <div className="relative">
+          {hasMessages && (
+            <div className="border-t border-[var(--hairline)] bg-[var(--surface-soft)] px-4 py-4">
+              <div className="max-w-3xl mx-auto">
+                <div className="flex gap-3 items-center">
+                  <div className="flex-1 relative">
                     <textarea
                       ref={inputRef}
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder={t('placeholder')}
-                      rows={3}
-                      className="input-textarea w-full px-6 py-4 pr-14 rounded-3xl"
+                      placeholder={loading ? t('thinking') : t('placeholder')}
+                      rows={1}
+                      className="input-textarea w-full px-5 py-3.5 rounded-2xl shadow-sm focus:shadow-md transition-shadow duration-200"
                     />
-                    <button
-                      type="button"
-                      onClick={sendStreamingMessage}
-                      disabled={loading || !input.trim()}
-                      className="btn-primary absolute right-3 bottom-3 w-10 h-10 !p-0 rounded-full flex items-center justify-center transition-transform duration-150 hover:scale-105 active:scale-95"
-                      aria-label={tCommon('submit')}
-                    >
-                      <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
-                    </button>
                   </div>
-                  <p className="text-xs text-center text-[var(--muted-soft)] mt-3">
-                    {t('sendHint')}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={sendStreamingMessage}
+                    disabled={loading || !input.trim()}
+                    className="btn-primary !p-3 rounded-[24px] flex-shrink-0 flex items-center justify-center transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+                    aria-label={tCommon('submit')}
+                  >
+                    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </button>
                 </div>
+                <p className="text-xs text-center text-[var(--muted-soft)] mt-2">
+                  {t('sendHint')}
+                </p>
               </div>
-            ) : (
-              <div className="px-4 py-6">
-                <AnimatePresence>
-                  {displayMessages.map((message, index) => {
-                    const isCurrentStreaming = loading &&
-                      index === displayMessages.length - 1 &&
-                      message.role === 'assistant' &&
-                      message.id === streamingMessageId;
-
-                    const height = messageHeights.get(message.id);
-
-                    return (
-                      <div
-                        key={message.id || `message-${index}`}
-                        style={{ minHeight: height || undefined }}
-                      >
-                        <ChatMessage
-                          message={message}
-                          isStreaming={isCurrentStreaming}
-                        />
-                      </div>
-                    );
-                  })}
-
-                  {loading && displayMessages[displayMessages.length - 1]?.role === 'user' && (
-                    <div className="flex items-center gap-2 mt-4">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse" />
-                        <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse animation-delay-200" />
-                        <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse animation-delay-400" />
-                      </div>
-                      <span className="text-sm text-[var(--muted-soft)]">
-                        {t('thinking')}
-                      </span>
-                    </div>
-                  )}
-                </AnimatePresence>
-
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {hasMessages && (
-          <div className="border-t border-[var(--hairline)] bg-[var(--surface-soft)] px-4 py-4">
-            <div className="max-w-3xl mx-auto">
-              <div className="flex gap-3 items-center">
-                <div className="flex-1 relative">
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={loading ? t('thinking') : t('placeholder')}
-                    rows={1}
-                    className="input-textarea w-full px-5 py-3 rounded-[24px]"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={sendStreamingMessage}
-                  disabled={loading || !input.trim()}
-                  className="btn-primary !p-3 rounded-[24px] flex-shrink-0 flex items-center justify-center transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
-                  aria-label={tCommon('submit')}
-                >
-                  <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                </button>
-              </div>
-              <p className="text-xs text-center text-[var(--muted-soft)] mt-2">
-                {t('sendHint')}
-              </p>
             </div>
-          </div>
-        )}
+          )}
 
-        <DocumentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <DocumentSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

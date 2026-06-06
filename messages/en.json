@@ -6,8 +6,12 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "close": "Close",
+    "menu": "Menu",
     "back": "Back",
     "submit": "Send",
+    "chat": "Chat",
+    "upload": "Upload",
+    "library": "Library",
     "retry": "Retry",
     "skip": "Skip"
   },
@@ -92,7 +96,10 @@
     "pageFailed": "Page {page} processing failed, retry?",
     "retryPage": "Retry Page",
     "skipContinue": "Skip & Continue",
-    "legalNotice": "Password verification required for document upload per regulations"
+    "legalNotice": "Password verification required for document upload per regulations",
+    "askNow": "Ask a question now",
+    "continueUpload": "Continue uploading",
+    "goToLibrary": "View in library"
   },
   "docTypes": {
     "manual": "Manual",
@@ -116,7 +123,9 @@
       "empty": "No chat history",
       "emptyHint": "Start a new chat, history will be saved here",
       "messageCount": "{count} messages",
-      "totalChats": "{count} chats total"
+      "totalChats": "{count} chats total",
+      "collapse": "Collapse sidebar",
+      "expand": "Expand sidebar"
     },
     "documents": {
       "title": "Document Library",
@@ -174,5 +183,38 @@
   "language": {
     "zh": "中文",
     "en": "English"
+  },
+  "library": {
+    "title": "Document Library",
+    "empty": "No documents yet",
+    "emptyHint": "Upload a PDF to get started",
+    "uploadButton": "Upload Document",
+    "chunks": "{count} chunks",
+    "totalDocs": "{docs} documents, {chunks} chunks total"
+  },
+  "onboarding": {
+    "welcome": "Welcome to Nano-RAG!",
+    "step1": "Upload a PDF document",
+    "step1Desc": "Choose a manual, FAQ, or API document",
+    "step2": "AI processes your document",
+    "step2Desc": "Auto-chunks, embeds, and indexes content",
+    "step3": "Ask questions naturally",
+    "step3Desc": "Get precise answers with source citations",
+    "cta": "Let's get started →"
+  },
+  "pdfParser": {
+    "uploadAria": "Upload PDF file",
+    "pdfIcon": "PDF file icon",
+    "dragOrDrop": "Drag and drop PDF file here",
+    "clickToSelect": "or click to select file",
+    "parsing": "Parsing...",
+    "notPdf": "Please upload a PDF file",
+    "parseFailed": "PDF parsing failed",
+    "unknownError": "Unknown error",
+    "viewExtracted": "View extracted text",
+    "togglePreview": "Expand/Collapse",
+    "pages": "pages",
+    "page": "Page",
+    "noText": "(No extractable text on this page)"
   }
 }

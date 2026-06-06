@@ -193,19 +193,31 @@ const ThinkingProcess = memo(function ThinkingProcess({
   className = ''
 }: ThinkingProcessProps) {
   const t = useTranslations('chat.thinking');
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false); // 默认收起，简化展示
+
+  useEffect(() => {
+    // 如果正在处理中或有错误，自动展开
+    const hasActive = steps.some(s => s.status === 'active');
+    const hasError = steps.some(s => s.status === 'error');
+    if (hasActive || hasError) {
+      setIsExpanded(true);
+    }
+  }, [steps]);
 
   useEffect(() => {
     if (isComplete) {
       const timer = setTimeout(() => {
         setIsExpanded(false);
-      }, 300);
+      }, 5000); // 完成后5秒自动收起
 
       return () => clearTimeout(timer);
     }
   }, [isComplete]);
 
   if (steps.length === 0) return null;
+
+  const completedCount = steps.filter(s => s.status === 'completed').length;
+  const totalCount = steps.length;
 
   return (
     <motion.div
@@ -216,13 +228,18 @@ const ThinkingProcess = memo(function ThinkingProcess({
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-3 py-1.5 flex items-center justify-between transition-colors hover:opacity-80 bg-[var(--canvas)]"
+        className="w-full px-3 py-2 flex items-center justify-between transition-all hover:bg-[var(--surface-card)] bg-[var(--canvas)]"
       >
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <span className="text-sm">🧠</span>
           <span className="font-medium text-xs" style={{ color: 'var(--foreground)' }}>
             {t('title')}
           </span>
+          {!isExpanded && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-soft)] text-[var(--muted)]">
+              {completedCount}/{totalCount}
+            </span>
+          )}
         </div>
         <motion.svg
           animate={{ rotate: isExpanded ? 180 : 0 }}

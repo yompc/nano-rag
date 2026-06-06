@@ -6,8 +6,12 @@
     "cancel": "取消",
     "delete": "删除",
     "close": "关闭",
+    "menu": "菜单",
     "back": "返回",
     "submit": "发送",
+    "chat": "对话",
+    "upload": "上传",
+    "library": "文档库",
     "retry": "重试",
     "skip": "跳过"
   },
@@ -92,7 +96,10 @@
     "pageFailed": "第{page}页处理失败，是否重试？",
     "retryPage": "重试本页",
     "skipContinue": "跳过继续",
-    "legalNotice": "为符合大陆法律法规，上传文档需密码验证"
+    "legalNotice": "为符合大陆法律法规，上传文档需密码验证",
+    "askNow": "开始提问",
+    "continueUpload": "继续上传",
+    "goToLibrary": "查看文档库"
   },
   "docTypes": {
     "manual": "手册",
@@ -116,7 +123,9 @@
       "empty": "暂无历史对话",
       "emptyHint": "开始新对话后，历史记录将保存在这里",
       "messageCount": "{count} 条消息",
-      "totalChats": "共 {count} 个对话"
+      "totalChats": "共 {count} 个对话",
+      "collapse": "收起侧边栏",
+      "expand": "展开侧边栏"
     },
     "documents": {
       "title": "文档库",
@@ -174,5 +183,38 @@
   "language": {
     "zh": "中文",
     "en": "English"
+  },
+  "library": {
+    "title": "文档库",
+    "empty": "暂无文档",
+    "emptyHint": "上传 PDF 文档后开始提问",
+    "uploadButton": "上传文档",
+    "chunks": "{count} 个片段",
+    "totalDocs": "共 {docs} 个文档，{chunks} 个片段"
+  },
+  "onboarding": {
+    "welcome": "欢迎使用 Nano-RAG！",
+    "step1": "上传 PDF 文档",
+    "step1Desc": "选择手册、FAQ 或 API 文档",
+    "step2": "AI 处理文档",
+    "step2Desc": "自动分块、嵌入和索引内容",
+    "step3": "自然语言提问",
+    "step3Desc": "获取带有来源引用的精确回答",
+    "cta": "开始使用 →"
+  },
+  "pdfParser": {
+    "uploadAria": "上传 PDF 文件",
+    "pdfIcon": "PDF 文件图标",
+    "dragOrDrop": "拖拽 PDF 文件到此处",
+    "clickToSelect": "或点击选择文件",
+    "parsing": "正在解析...",
+    "notPdf": "请上传 PDF 文件",
+    "parseFailed": "PDF 解析失败",
+    "unknownError": "未知错误",
+    "viewExtracted": "查看提取的文本",
+    "togglePreview": "展开/收起",
+    "pages": "页",
+    "page": "第",
+    "noText": "(此页无可提取文本)"
   }
 }

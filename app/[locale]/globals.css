@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-:root {
+/* ===== Light Theme (default) ===== */
+:root,
+[data-theme="light"] {
   --font-display: "Cormorant Garamond", serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
@@ -10,7 +12,7 @@
   --primary-hover: #a9583e;
   --secondary: #f5f5f7;
   --border: #d2d2d7;
-  --muted: #86868b;
+  --muted: #6b695f;           /* 从 #86868b 调整以符合 WCAG AA 对比度 */
   --success: #34c759;
   --error: #ff3b30;
   --warning: #f59e0b;
@@ -30,7 +32,8 @@
   --ink: #141413;
   --body-strong: #252523;
   --body: #3d3d3a;
-  --muted-soft: #8e8b82;
+  --muted: #6b695f;           /* 从 #86868b 调整以符合 WCAG AA 对比度 */
+  --muted-soft: #7a786e;      /* 从 #8e8b82 加深以符合 WCAG AA 对比度 */
 
   --hairline: #e6dfd8;
   --hairline-soft: #ebe6df;
@@ -41,6 +44,15 @@
 
   --accent-teal: #5db8a6;
   --accent-amber: #e8a55a;
+
+  /* 语义化交互状态色 */
+  --primary-subtle: rgba(204, 120, 92, 0.12);
+  --error-subtle: rgba(255, 59, 48, 0.12);
+  --success-subtle: rgba(52, 199, 89, 0.12);
+
+  /* 焦点环 */
+  --focus-ring: 0 0 0 3px rgba(204, 120, 92, 0.25);
+  --focus-ring-offset: 2px;
 
   --user-bubble: #0071e3;
   --user-text: #ffffff;
@@ -82,34 +94,113 @@
   --max-content-width: 1200px;
 }
 
+/* ===== Dark Theme (explicit user choice) ===== */
+[data-theme="dark"] {
+  --background: #0f0f0e;
+  --foreground: #f5f5f7;
+  --primary: #e08a6c;
+  --primary-hover: #cc785c;
+  --secondary: #1c1c1e;
+  --border: #3a3a3c;
+  --muted: #a0a0a5;           /* 深色模式下调整以符合 WCAG AA 对比度 */
+  --success: #30d158;
+  --error: #ff453a;
+  --warning: #ffd60a;
+  --warning-bg: #3d3510;
+  --warning-border: #5c4d18;
+  --warning-text: #ffd60a;
+  --warning-icon: #ffd60a;
+
+  --canvas: #0f0f0e;
+  --surface-soft: #1a1a18;
+  --surface-card: #252320;
+  --surface-cream-strong: #2a2a26;
+  --surface-dark: #0a0a09;
+  --surface-dark-elevated: #1f1e1b;
+  --surface-dark-soft: #181715;
+
+  --ink: #f5f5f7;
+  --body-strong: #e8e8e6;
+  --body: #d1d1cf;
+  --muted-soft: #8a8a88;
+
+  --hairline: #2a2a28;
+  --hairline-soft: #222220;
+
+  --on-primary: #0f0f0e;
+  --on-dark: #faf9f5;
+  --on-dark-soft: #a09d96;
+
+  --accent-teal: #6dd4c0;
+  --accent-amber: #f0b060;
+
+  --user-bubble: #cc785c;
+  --user-text: #ffffff;
+  --assistant-bubble: #1a1a18;
+  --assistant-text: #f5f5f7;
+
+  --glass-bg: rgba(15, 15, 14, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* ===== System Preference (fallback when no data-theme attribute) ===== */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #181715;
+  :root:not([data-theme="light"]) {
+    --background: #0f0f0e;
     --foreground: #f5f5f7;
-    --primary: #cc785c;
-    --primary-hover: #a9583e;
+    --primary: #e08a6c;
+    --primary-hover: #cc785c;
     --secondary: #1c1c1e;
-    --border: #38383a;
-    --muted: #98989d;
+    --border: #3a3a3c;
+    --muted: #a0a0a5;           /* 深色模式下调整以符合 WCAG AA 对比度 */
+    --success: #30d158;
+    --error: #ff453a;
+    --warning: #ffd60a;
+    --warning-bg: #3d3510;
+    --warning-border: #5c4d18;
+    --warning-text: #ffd60a;
+    --warning-icon: #ffd60a;
 
-    --canvas: #181715;
+    --canvas: #0f0f0e;
+    --surface-soft: #1a1a18;
     --surface-card: #252320;
-    --surface-dark-elevated: #252320;
-    --surface-dark-soft: #1f1e1b;
+    --surface-cream-strong: #2a2a26;
+    --surface-dark: #0a0a09;
+    --surface-dark-elevated: #1f1e1b;
+    --surface-dark-soft: #181715;
 
-    --hairline: #38383a;
+    --ink: #f5f5f7;
+    --body-strong: #e8e8e6;
+    --body: #d1d1cf;
+    --muted-soft: #8a8a88;
 
+    --hairline: #2a2a28;
+    --hairline-soft: #222220;
+
+    --on-primary: #0f0f0e;
     --on-dark: #faf9f5;
     --on-dark-soft: #a09d96;
 
+    --accent-teal: #6dd4c0;
+    --accent-amber: #f0b060;
+
     --user-bubble: #cc785c;
     --user-text: #ffffff;
-    --assistant-bubble: #252320;
-    --assistant-text: #faf9f5;
+    --assistant-bubble: #1a1a18;
+    --assistant-text: #f5f5f7;
 
-    --glass-bg: rgba(28, 28, 30, 0.72);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    --glass-bg: rgba(15, 15, 14, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 }
 
@@ -121,7 +212,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Button styles - Claude Design System */
+/* Button styles */
 .btn-primary {
   background-color: var(--primary);
   color: var(--on-primary);
@@ -137,17 +228,31 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .btn-primary:hover {
   background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
 }
 
 .btn-primary:disabled {
   background-color: var(--hairline);
   color: var(--muted);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-secondary {
@@ -162,11 +267,20 @@ body {
   border-radius: var(--radius-md);
   border: 1px solid var(--hairline);
   cursor: pointer;
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .btn-secondary:hover {
   background-color: var(--surface-soft);
+  border-color: var(--muted-soft);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
 }
 
 .btn-secondary-on-dark {
@@ -212,11 +326,18 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .btn-icon-circular:hover {
   background-color: var(--surface-soft);
+  transform: scale(1.05);
+}
+
+.btn-icon-circular:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring);
 }
 
 ::-webkit-scrollbar {
@@ -368,7 +489,7 @@ body {
   }
 }
 
-/* Input styles - Claude Design System */
+/* Input styles */
 .input-text {
   background-color: var(--canvas);
   color: var(--ink);
@@ -414,7 +535,12 @@ body {
 
 .input-textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.15);
+  box-shadow: var(--focus-ring);
+}
+
+.input-textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .input-textarea:disabled {
@@ -427,7 +553,7 @@ body {
   color: var(--muted-soft);
 }
 
-/* Card styles - Claude Design System */
+/* Card styles */
 .card-feature {
   background-color: var(--surface-card);
   color: var(--ink);
@@ -533,4 +659,58 @@ body {
 
 .animate-fade-in {
   animation: fade-in 150ms ease-out;
+}
+
+/* 骨架屏加载动画 */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-soft) 25%,
+    var(--surface-card) 50%,
+    var(--surface-soft) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* 消息入场动画 */
+@keyframes message-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-message-in {
+  animation: message-in 0.3s ease-out;
+}
+
+/* GPU 加速提示 */
+.animate-slide-in-right,
+.animate-slide-in-left,
+.animate-bounce-in,
+.animate-fade-in,
+.animate-message-in {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* 减少重绘优化 */
+.message-bubble,
+.card-feature,
+.card-dark {
+  contain: layout style paint;
 }

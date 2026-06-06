@@ -7,7 +7,8 @@ import { useTranslations } from 'next-intl';
 import { PDFParser, type ParsedPDF } from '@/components/pdf-parser';
 import { createDocument, ingestPage } from '@/app/actions/ingest';
 import { PasswordDialog } from '@/components/password-dialog';
-import { LanguageSwitcher } from '@/components/language-switcher';
+import { AppShell } from '@/components/app-shell';
+import { useUploadState } from '@/hooks/use-upload-state';
 
 type DocType = 'manual' | 'faq' | 'api_doc';
 
@@ -27,6 +28,7 @@ export default function UploadPage() {
   const [isRetrying, setIsRetrying] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [passwordError, setPasswordError] = useState<string | undefined>();
+  const { notifyUpload } = useUploadState();
 
   const DOC_TYPE_OPTIONS: { value: DocType; label: string; icon: string }[] = [
     { value: 'manual', label: tDocTypes('manual'), icon: '📖' },
@@ -89,14 +91,9 @@ export default function UploadPage() {
 
     setUploadProgress(100);
     setSuccess(true);
-    setTimeout(() => {
-      setParsedPDF(null);
-      setSuccess(false);
-      setUploadProgress(0);
-      setCurrentPage(0);
-      setCurrentDocId(null);
-    }, 2000);
-  }, [parsedPDF, docType, t]);
+    notifyUpload(docId, parsedPDF.filename);
+    // Keep success state visible — user can click CTA or continue uploading
+  }, [parsedPDF, docType, t, notifyUpload]);
 
   const handlePasswordSubmit = useCallback(async (password: string, remember: boolean) => {
     if (!parsedPDF) return;
@@ -195,13 +192,7 @@ export default function UploadPage() {
 
         setUploadProgress(100);
         setSuccess(true);
-        setTimeout(() => {
-          setParsedPDF(null);
-          setSuccess(false);
-          setUploadProgress(0);
-          setCurrentPage(0);
-          setCurrentDocId(null);
-        }, 2000);
+        notifyUpload(currentDocId, parsedPDF.filename);
       } else {
         setError(t('pageFailed', { page: failedPage + 1 }));
       }
@@ -242,13 +233,7 @@ export default function UploadPage() {
 
       setUploadProgress(100);
       setSuccess(true);
-      setTimeout(() => {
-        setParsedPDF(null);
-        setSuccess(false);
-        setUploadProgress(0);
-        setCurrentPage(0);
-        setCurrentDocId(null);
-      }, 2000);
+      notifyUpload(currentDocId, parsedPDF.filename);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('error'));
     } finally {
@@ -257,7 +242,7 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)]">
+    <AppShell>
       <PasswordDialog
         open={passwordDialogOpen}
         onClose={() => { setPasswordDialogOpen(false); setPasswordError(undefined); }}
@@ -265,16 +250,7 @@ export default function UploadPage() {
         error={passwordError}
       />
 
-      {/* Header with language switcher */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--hairline)] bg-[var(--canvas)]">
-        <div className="flex items-center gap-2">
-          <img src="/logo.svg" alt="Nano RAG" className="w-8 h-8" />
-          <span className="font-display font-semibold text-base text-[var(--ink)]">Nano RAG</span>
-        </div>
-        <LanguageSwitcher />
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 w-full">
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
             <Link
@@ -322,12 +298,33 @@ export default function UploadPage() {
                 transition={{ duration: 0.15 }}
                 className="mb-6 p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl"
               >
-                <p className="text-green-700 dark:text-green-300 text-sm flex items-center gap-2">
+                <p className="text-green-700 dark:text-green-300 text-sm flex items-center gap-2 mb-3">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   {t('uploadSuccess')}
                 </p>
+                <div className="flex gap-2">
+                  <Link
+                    href="/"
+                    className="btn-primary px-4 py-2 text-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    {t('askNow')}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="px-4 py-2 border border-[var(--hairline)] text-[var(--body-strong)] rounded-lg text-sm hover:bg-[var(--canvas)] transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    {t('continueUpload')}
+                  </button>
+                  <Link
+                    href="/library"
+                    className="px-4 py-2 border border-[var(--hairline)] text-[var(--body-strong)] rounded-lg text-sm hover:bg-[var(--canvas)] transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    {t('goToLibrary')}
+                  </Link>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -399,16 +396,17 @@ export default function UploadPage() {
                         aria-checked={docType === option.value}
                         type="button"
                         className={`
-                          p-4 rounded-xl border border-[var(--hairline)] transition-all duration-150
+                          p-4 rounded-xl border-2 transition-all duration-200
                           ${docType === option.value
-                            ? 'bg-[var(--surface-card)] shadow-md'
-                            : 'bg-[var(--canvas)] hover:opacity-80'
+                            ? 'border-[var(--primary)] bg-[var(--primary-subtle)] shadow-sm scale-[1.02]'
+                            : 'border-[var(--hairline)] bg-[var(--canvas)] hover:border-[var(--muted-soft)]'
                           }
                           ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]'}
+                          focus-visible:outline-2 focus-visible:outline-[var(--primary)] focus-visible:outline-offset-2
                         `}
                       >
-                        <div className="text-3xl mb-2" aria-hidden="true">{option.icon}</div>
-                        <div className="text-sm text-[var(--body-strong)]">
+                        <div className={`text-3xl mb-2 transition-transform duration-200 ${docType === option.value ? 'scale-110' : ''}`} aria-hidden="true">{option.icon}</div>
+                        <div className={`text-sm ${docType === option.value ? 'text-[var(--primary)] font-medium' : 'text-[var(--body-strong)]'}`}>
                           {option.label}
                         </div>
                       </button>
@@ -495,6 +493,6 @@ export default function UploadPage() {
           <p className="text-sm text-[var(--body)]">{t('legalNotice')}</p>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
