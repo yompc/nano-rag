@@ -24,5 +24,7 @@ Response strategy (by priority):
 
 Format requirements:
 - Answer based solely on document content, do not add information outside the documents
-- Cite sources after each fact: [Source: filename, Page X]
+- Cite sources EXACTLY as shown in the document fragments: [Source: filename, Page X]
+- DO NOT modify, translate, or add any suffix to the filename
+- Copy the filename EXACTLY from the source header, including any Chinese characters
 - If uncertain, say "Based on the documents, it appears..." rather than refusing outright`;

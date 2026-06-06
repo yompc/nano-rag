@@ -30,6 +30,7 @@ export default function HomePage() {
   const t = useTranslations('home');
   const tCommon = useTranslations('common');
   const tErrors = useTranslations('errors');
+  const tChat = useTranslations('chat');
   const {
     sessions,
     currentSessionId,
@@ -296,7 +297,7 @@ export default function HomePage() {
                       {
                         id: `retry-${retryCount}`,
                         name: 'retry',
-                        description: data.reason || 'retry reason',
+                        description: data.reason || tChat('retry.reason'),
                         status: 'active' as const,
                       },
                     ];
@@ -352,8 +353,26 @@ export default function HomePage() {
 
                 case 'error': {
                   const errorCode = data.code || data.message;
-                  const errorMessage = tErrors.has(errorCode) ? tErrors(errorCode) : data.message;
-                  throw new Error(errorMessage);
+                  let errorMessage: string;
+                  try {
+                    errorMessage = tErrors(errorCode);
+                  } catch {
+                    errorMessage = data.message || tCommon('error');
+                  }
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: assistantMessageId!,
+                      role: 'assistant',
+                      content: errorMessage,
+                      timestamp: new Date(),
+                      thinkingSteps: thinkingStepsRef.current,
+                    },
+                  ]);
+                  setStreamingMessageId(null);
+                  setStreamingContent('');
+                  setLoading(false);
+                  return;
                 }
 
                 case 'done': {
@@ -379,8 +398,10 @@ export default function HomePage() {
                   break;
                 }
               }
-            } catch {
-              console.error('Failed to parse event data');
+            } catch (parseError) {
+              if (dataStr.trim()) {
+                console.error('Failed to parse event data:', dataStr.substring(0, 100), parseError);
+              }
             }
             currentEvent = '';
           }

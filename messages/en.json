@@ -114,7 +114,9 @@
     "generate": "Generating",
     "check": "Verifying",
     "quality_check": "Quality Check",
-    "complete": "Complete"
+    "complete": "Complete",
+    "retry": "Retry",
+    "error": "Error"
   },
   "sidebar": {
     "history": {
@@ -199,6 +201,7 @@
   },
   "onboarding": {
     "welcome": "Welcome to Nano-RAG!",
+    "stepsCount": "3 simple steps",
     "step1": "Upload a PDF document",
     "step1Desc": "Choose a manual, FAQ, or API document",
     "step2": "AI processes your document",

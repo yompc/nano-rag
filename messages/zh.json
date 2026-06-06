@@ -114,7 +114,9 @@
     "generate": "生成回答",
     "check": "验证回答",
     "quality_check": "质量检测",
-    "complete": "完成"
+    "complete": "完成",
+    "retry": "重试",
+    "error": "错误"
   },
   "sidebar": {
     "history": {
@@ -199,6 +201,7 @@
   },
   "onboarding": {
     "welcome": "欢迎使用 Nano-RAG！",
+    "stepsCount": "3 个简单步骤",
     "step1": "上传 PDF 文档",
     "step1Desc": "选择手册、FAQ 或 API 文档",
     "step2": "AI 处理文档",
