@@ -13,7 +13,8 @@
     "upload": "Upload",
     "library": "Library",
     "retry": "Retry",
-    "skip": "Skip"
+    "skip": "Skip",
+    "landing": "Landing"
   },
   "nav": {
     "learnMore": "Learn More",
