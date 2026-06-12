@@ -42,7 +42,10 @@ export default async function Image() {
               marginRight: 24,
             }}
           >
-            <span style={{ fontSize: 40, color: '#fff' }}>✦</span>
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <rect x="12" y="4" width="16" height="32" rx="2" fill="white" opacity="0.9"/>
+              <rect x="4" y="12" width="32" height="16" rx="2" fill="white" opacity="0.9"/>
+            </svg>
           </div>
           <h1
             style={{
